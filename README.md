@@ -168,19 +168,10 @@ This project has been built strictly adhering to ethical open-source and privacy
 ```
 Voice-Command-Shopping-Assistant/
 ├── public/
-│   ├── favicon.svg             # App favicon
-│   ├── cart.svg                # Brand icon
-│   └── icons.svg               # SVG sprite definitions
+│   └── cart.svg                # Brand icon
 ├── src/
-│   ├── assets/                 # Static images & artwork
 │   ├── components/
-│   │   ├── LanguageSelector.tsx # 6-language switcher
-│   │   ├── ManualInput.tsx      # Fallback form for manual item entry
-│   │   ├── SearchBar.tsx        # Real-time list search bar
-│   │   ├── ShoppingList.tsx     # Categorized list view with quantity controls
-│   │   ├── Suggestions.tsx      # Suggestion cards (frequency, pairings, seasonal)
-│   │   ├── Toast.tsx            # Accessible notification toast container
-│   │   └── VoiceButton.tsx      # Pulse mic button with live audio visualizer
+│   │   └── Toast.tsx            # Accessible notification toast container
 │   ├── hooks/
 │   │   ├── useShoppingList.ts   # Core list state + localStorage sync
 │   │   └── useVoiceRecognition.ts # Web Speech API wrapper & lifecycle handler
@@ -191,11 +182,11 @@ Voice-Command-Shopping-Assistant/
 │   ├── utils/
 │   │   ├── categories.ts        # Item classification & aisle mappings
 │   │   ├── nlp.ts               # Intent, entity, quantity & unit parser
+│   │   ├── pricing.ts           # Deterministic mock pricing engine
 │   │   ├── suggestions.ts       # Pairing, frequency, & seasonal algorithms
 │   │   └── toast.ts             # Decoupled toast event emitter
 │   ├── App.css                  # Custom responsive design system
 │   ├── App.tsx                  # Main application orchestrator & dashboard
-│   ├── index.css                # Global CSS resets & root tokens
 │   └── main.tsx                 # React DOM root entry point
 ├── .gitignore                   # Comprehensive rule set for safe commits
 ├── .oxlintrc.json               # Fast linter configuration
