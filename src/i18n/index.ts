@@ -4,6 +4,7 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   'en-US': {
     translation: {
+      voice: 'Voice', myLists: 'My Lists', settings: 'Settings', search: 'Search', welcomeBack: 'Welcome back', companion: 'Your shopping companion', newList: 'New List', help: 'Help', privacy: 'Privacy', voiceLang: 'Voice Language', voiceRef: 'Voice Commands Reference',
       title: 'Voice Shopping Assistant',
       tapToSpeak: 'Tap to Speak',
       listening: 'Listening...',
@@ -30,6 +31,7 @@ const resources = {
   },
   'es-ES': {
     translation: {
+      voice: 'Voz', myLists: 'Mis Listas', settings: 'Ajustes', search: 'Buscar', welcomeBack: 'Bienvenido de nuevo', companion: 'Tu compañero de compras', newList: 'Nueva Lista', help: 'Ayuda', privacy: 'Privacidad', voiceLang: 'Idioma de Voz', voiceRef: 'Referencia de Comandos de Voz',
       title: 'Asistente de Compras por Voz',
       tapToSpeak: 'Toca para Hablar',
       listening: 'Escuchando...',
@@ -56,6 +58,7 @@ const resources = {
   },
   'fr-FR': {
     translation: {
+      voice: 'Voix', myLists: 'Mes Listes', settings: 'Paramètres', search: 'Rechercher', welcomeBack: 'Bon retour', companion: 'Votre compagnon', newList: 'Nouvelle Liste', help: 'Aide', privacy: 'Confidentialité', voiceLang: 'Langue Vocale', voiceRef: 'Commandes Vocales',
       title: 'Assistant Shopping Vocal',
       tapToSpeak: 'Appuyez pour Parler',
       listening: 'Écoute...',
@@ -82,6 +85,7 @@ const resources = {
   },
   'de-DE': {
     translation: {
+      voice: 'Stimme', myLists: 'Meine Listen', settings: 'Einstellungen', search: 'Suche', welcomeBack: 'Willkommen zurück', companion: 'Ihr Einkaufsbegleiter', newList: 'Neue Liste', help: 'Hilfe', privacy: 'Datenschutz', voiceLang: 'Sprache', voiceRef: 'Sprachbefehle',
       title: 'Sprach-Einkaufsassistent',
       tapToSpeak: 'Tippen zum Sprechen',
       listening: 'Höre zu...',
@@ -108,6 +112,7 @@ const resources = {
   },
   'hi-IN': {
     translation: {
+      voice: 'आवाज़', myLists: 'मेरी सूचियां', settings: 'सेटिंग्स', search: 'खोजें', welcomeBack: 'वापसी पर स्वागत है', companion: 'आपका शॉपिंग साथी', newList: 'नई सूची', help: 'मदद', privacy: 'गोपनीयता', voiceLang: 'आवाज़ की भाषा', voiceRef: 'वॉयस कमांड संदर्भ',
       title: 'वॉयस शॉपिंग असिस्टेंट',
       tapToSpeak: 'बोलने के लिए टैप करें',
       listening: 'सुन रहा हूं...',
@@ -134,6 +139,7 @@ const resources = {
   },
   'zh-CN': {
     translation: {
+      voice: '语音', myLists: '我的列表', settings: '设置', search: '搜索', welcomeBack: '欢迎回来', companion: '您的购物伴侣', newList: '新列表', help: '帮助', privacy: '隐私', voiceLang: '语音语言', voiceRef: '语音命令参考',
       title: '语音购物助手',
       tapToSpeak: '点击说话',
       listening: '正在听...',

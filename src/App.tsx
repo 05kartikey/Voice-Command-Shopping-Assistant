@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import './i18n';
 import type { Language } from './types';
@@ -28,7 +28,7 @@ const AISLE_ICONS: Record<string, string> = {
 };
 
 export default function App() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [lang, setLang] = useState<Language>(() => {
     const navLang = navigator.language.toLowerCase();
     if (navLang.startsWith('es')) return 'es-ES';
@@ -38,6 +38,11 @@ export default function App() {
     if (navLang.startsWith('zh')) return 'zh-CN';
     return 'en-US';
   });
+
+  useEffect(() => {
+    i18n.changeLanguage(lang);
+  }, [lang, i18n]);
+
   const [search, setSearch] = useState('');
   const [heard, setHeard] = useState('');
   const [activeNav, setActiveNav] = useState<'voice'|'list'|'suggest'|'search'|'history'|'settings'>('voice');
@@ -161,12 +166,12 @@ export default function App() {
   const seasonalSugs = suggestions.filter(s => s.reason === 'In season right now');
 
   const NAV = [
-    { id: 'voice', icon: 'mic', label: 'Voice' },
-    { id: 'list', icon: 'list_alt', label: 'My Lists' },
-    { id: 'suggest', icon: 'lightbulb', label: 'Suggestions' },
-    { id: 'search', icon: 'search', label: 'Search' },
-    { id: 'history', icon: 'history', label: 'History' },
-    { id: 'settings', icon: 'settings', label: 'Settings' },
+    { id: 'voice', icon: 'mic', label: t('voice') },
+    { id: 'list', icon: 'list_alt', label: t('myLists') },
+    { id: 'suggest', icon: 'lightbulb', label: t('suggestions') },
+    { id: 'search', icon: 'search', label: t('search') },
+    { id: 'history', icon: 'history', label: t('history') },
+    { id: 'settings', icon: 'settings', label: t('settings') },
   ];
 
   return (
@@ -193,12 +198,12 @@ export default function App() {
         <div className="vc-sidebar-user">
           <div className="vc-sidebar-avatar">V</div>
           <div>
-            <p className="vc-sidebar-name">Welcome back</p>
-            <p className="vc-sidebar-sub">Your shopping companion</p>
+            <p className="vc-sidebar-name">{t('welcomeBack')}</p>
+            <p className="vc-sidebar-sub">{t('companion')}</p>
           </div>
         </div>
         <button className="vc-new-list-btn" onClick={() => { clearList(); toast('New list started', 'info'); setSidebarOpen(false); }}>
-          <span className="material-symbols-outlined">add</span> New List
+          <span className="material-symbols-outlined">add</span> {t('newList')}
         </button>
         <nav className="vc-sidenav">
           {NAV.map(n => (
@@ -211,8 +216,8 @@ export default function App() {
           ))}
         </nav>
         <div className="vc-sidebar-footer">
-          <button className="vc-sidenav-item"><span className="material-symbols-outlined">help</span><span>Help</span></button>
-          <button className="vc-sidenav-item"><span className="material-symbols-outlined">shield</span><span>Privacy</span></button>
+          <button className="vc-sidenav-item"><span className="material-symbols-outlined">help</span><span>{t('help')}</span></button>
+          <button className="vc-sidenav-item"><span className="material-symbols-outlined">shield</span><span>{t('privacy')}</span></button>
         </div>
       </aside>
       {sidebarOpen && <div className="vc-overlay" onClick={() => setSidebarOpen(false)} />}
@@ -724,7 +729,7 @@ export default function App() {
           <div className="vc-list-page">
             <div className="vc-list-page-header"><h1 className="vc-page-title">Settings</h1></div>
             <div className="vc-settings-card">
-              <p className="vc-settings-label">Voice Language</p>
+              <p className="vc-settings-label">{t('voiceLang')}</p>
               <div className="vc-settings-langs">
                 {LANGS.map(l => (
                   <button key={l.code} className={`vc-settings-lang-btn ${lang === l.code ? 'active' : ''}`} onClick={() => setLang(l.code)}>
@@ -734,7 +739,7 @@ export default function App() {
               </div>
             </div>
             <div className="vc-settings-card">
-              <p className="vc-settings-label">Voice Commands Reference</p>
+              <p className="vc-settings-label">{t('voiceRef')}</p>
               <div className="vc-cmd-table">
                 {[
                   ['Add item', '"Add milk" / "I need eggs"'],
