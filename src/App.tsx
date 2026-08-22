@@ -40,7 +40,12 @@ export default function App() {
   const [searchFilter, setSearchFilter] = useState('');
   const [maxPriceFilter, setMaxPriceFilter] = useState<number | null>(null);
 
-  const { items, history, dismissed, addItem, removeItem, toggleCheck, checkByName, clearList, updateQuantity, dismissSuggestion, clearDismissed, clearHistory, removeFromHistory } = useShoppingList();
+  const { 
+    items, history, dismissed, 
+    addItem, removeItem, toggleCheck, checkByName, uncheckByName,
+    clearList, clearChecked, updateQuantity, adjustQuantityByName,
+    dismissSuggestion, clearDismissed, clearHistory, removeFromHistory 
+  } = useShoppingList();
 
   const handleVoice = useCallback((transcript: string) => {
     const cmd = parseCommand(transcript);
@@ -74,10 +79,44 @@ export default function App() {
           toast(`Searching for "${cmd.searchQuery}"`, 'info');
         }
         break;
+      case 'uncheck':
+        uncheckByName(cmd.item);
+        toast(`Unchecked "${cmd.item}"`, 'info');
+        break;
+      case 'clear_checked':
+        clearChecked();
+        toast('Cleared all purchased items', 'info');
+        break;
+      case 'increase':
+        adjustQuantityByName(cmd.item, cmd.quantity);
+        toast(`Added ${cmd.quantity} more "${cmd.item}"`, 'success');
+        break;
+      case 'decrease':
+        adjustQuantityByName(cmd.item, -cmd.quantity);
+        toast(`Removed ${cmd.quantity} "${cmd.item}"`, 'info');
+        break;
+      case 'navigate': {
+        const dest = cmd.destination?.toLowerCase() || '';
+        if (dest.includes('history') || dest.includes('past')) setActiveNav('history');
+        else if (dest.includes('suggest') || dest.includes('smart')) setActiveNav('suggest');
+        else if (dest.includes('setting') || dest.includes('options')) setActiveNav('settings');
+        else if (dest.includes('search') || dest.includes('find')) setActiveNav('search');
+        else setActiveNav('list');
+        toast(`Navigated to ${dest}`, 'info');
+        break;
+      }
+      case 'total': {
+        const total = items.reduce((sum, item) => sum + ((item.price || 0) * item.quantity), 0);
+        toast(`Your estimated total is $${total.toFixed(2)}`, 'info');
+        break;
+      }
+      case 'unknown':
+        toast(t('didntUnderstand'), 'error');
+        break;
       default:
         toast(t('didntUnderstand'), 'error');
     }
-  }, [t, addItem, removeItem, checkByName, clearList]);
+  }, [addItem, removeItem, checkByName, uncheckByName, clearList, clearChecked, adjustQuantityByName, items, t]);
 
   const voice = useVoiceRecognition(lang, handleVoice);
   const allSuggestions = useMemo(() => generateSuggestions(items, history), [items, history]);
@@ -699,8 +738,13 @@ export default function App() {
                   ['With quantity', '"Add 2 bottles of water"'],
                   ['Remove', '"Remove milk" / "Take bread off my list"'],
                   ['Check off', '"Check off eggs"'],
-                  ['Search', '"Find organic apples"'],
-                  ['Clear', '"Clear the list"'],
+                  ['Uncheck', '"Uncheck eggs" / "Undo milk"'],
+                  ['Clear checked', '"Clear checked items"'],
+                  ['Adjust qty', '"Add another milk" / "Decrease apples by 2"'],
+                  ['Search / Filter', '"Find organic apples under $5"'],
+                  ['Navigate', '"Go to history" / "Open settings"'],
+                  ['Total cost', '"What is the total cost?" / "Budget"'],
+                  ['Clear all', '"Clear the list"'],
                 ].map(([cmd, ex]) => (
                   <div key={cmd} className="vc-cmd-row">
                     <span className="vc-cmd-name">{cmd}</span>

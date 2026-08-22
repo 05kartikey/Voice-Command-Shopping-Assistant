@@ -1,10 +1,11 @@
 interface ParsedCommand {
-  action: 'add' | 'remove' | 'check' | 'clear' | 'search' | 'unknown';
+  action: 'add' | 'remove' | 'check' | 'clear' | 'search' | 'unknown' | 'uncheck' | 'increase' | 'decrease' | 'navigate' | 'clear_checked' | 'total';
   item: string;
   quantity: number;
   unit: string;
   searchQuery?: string;
   maxPrice?: number;
+  destination?: string;
 }
 
 const UNITS_LIST = [
@@ -213,6 +214,60 @@ const CLEAR_TRIGGERS = [
   'सूची साफ़ करें', 'सब कुछ हटाएं', 'पूरी लिस्ट डिलीट करें', 'list clear karo', 'sab hatao'
 ];
 
+const UNCHECK_TRIGGERS = [
+  'uncheck', 'unmark', 'undo', 'mark as not done', 'mark as unbought',
+  'desmarcar', 'desmarca', 'deshacer',
+  'décocher', 'décoche', 'annuler',
+  'rückgängig', 'nicht abgehakt',
+  '取消划掉', '取消标记',
+  'अनचेक', 'uncheck karo'
+];
+
+const CLEAR_CHECKED_TRIGGERS = [
+  'clear checked', 'clear checked items', 'remove finished items', 'remove purchased items', 'delete done items',
+  'borrar completados', 'eliminar comprados',
+  'supprimer les éléments cochés', 'effacer les terminés',
+  'erledigte löschen', 'gekaute entfernen',
+  '清除已买', '删除已完成',
+  'खरीदे हुए हटाएं', 'checked hatao'
+];
+
+const INCREASE_TRIGGERS = [
+  'add another', 'add more', 'one more', 'increase', 'add an extra',
+  'añadir otro', 'más', 'aumentar',
+  'ajouter un autre', 'plus de', 'augmenter',
+  'noch ein', 'mehr', 'erhöhen',
+  '再加', '多加', '增加',
+  'एक और', 'बढ़ाएं', 'aur add karo'
+];
+
+const DECREASE_TRIGGERS = [
+  'decrease', 'reduce', 'one less', 'remove one',
+  'reducir', 'disminuir', 'uno menos',
+  'diminuer', 'réduire', 'un de moins',
+  'verringern', 'weniger',
+  '减少', '减去',
+  'कम करें', 'ghatao', 'ek kam karo'
+];
+
+const NAVIGATE_TRIGGERS = [
+  'go to', 'show', 'open', 'take me to',
+  'ir a', 'mostrar', 'abrir',
+  'aller à', 'montrer', 'ouvrir',
+  'gehe zu', 'zeige', 'öffne',
+  '去', '打开', '显示',
+  'जाओ', 'खोलें', 'दिखाओ'
+];
+
+const TOTAL_TRIGGERS = [
+  'what is the total', 'how much', 'total cost', 'total price', 'budget',
+  'cuál es el total', 'cuánto es', 'precio total',
+  'quel est le total', 'combien', 'prix total',
+  'was ist die summe', 'wie viel', 'gesamtpreis',
+  '总共', '多少钱', '总价',
+  'कुल कितना', 'total kitna', 'kitne paise'
+];
+
 function matchesTrigger(text: string, triggers: string[]): string | null {
   const sorted = [...triggers].sort((a, b) => b.length - a.length);
   for (const trigger of sorted) {
@@ -249,9 +304,19 @@ function extractMaxPrice(text: string): { textWithoutPrice: string, maxPrice?: n
 export function parseCommand(transcript: string): ParsedCommand {
   const text = transcript.trim().toLowerCase().replace(/[.,!?]+$/, '');
 
-  // 1. Clear
+  // 1. Clear All
   if (CLEAR_TRIGGERS.some(t => text === t || text.startsWith(t))) {
     return { action: 'clear', item: '', quantity: 1, unit: 'item' };
+  }
+
+  // 1b. Clear Checked
+  if (CLEAR_CHECKED_TRIGGERS.some(t => text === t || text.startsWith(t))) {
+    return { action: 'clear_checked', item: '', quantity: 1, unit: 'item' };
+  }
+
+  // 1c. Total
+  if (TOTAL_TRIGGERS.some(t => text === t || text.startsWith(t))) {
+    return { action: 'total', item: '', quantity: 1, unit: 'item' };
   }
 
   // 2. Check off
@@ -262,6 +327,14 @@ export function parseCommand(transcript: string): ParsedCommand {
     return { action: 'check', item, quantity: 1, unit: 'item' };
   }
 
+  // 2b. Uncheck
+  const uncheckRaw = matchesTrigger(text, UNCHECK_TRIGGERS);
+  if (uncheckRaw !== null) {
+    const cleaned = stripListSuffix(uncheckRaw);
+    const { item } = extractQtyUnit(cleaned);
+    return { action: 'uncheck', item, quantity: 1, unit: 'item' };
+  }
+
   // 3. Remove
   const removeRaw = matchesTrigger(text, REMOVE_TRIGGERS);
   if (removeRaw !== null) {
@@ -269,6 +342,29 @@ export function parseCommand(transcript: string): ParsedCommand {
     const { item } = extractQtyUnit(cleaned);
     return { action: 'remove', item, quantity: 1, unit: 'item' };
   }
+
+  // 3b. Increase
+  const increaseRaw = matchesTrigger(text, INCREASE_TRIGGERS);
+  if (increaseRaw !== null) {
+    const cleaned = stripListSuffix(increaseRaw);
+    const { item, quantity } = extractQtyUnit(cleaned);
+    return { action: 'increase', item, quantity, unit: 'item' };
+  }
+
+  // 3c. Decrease
+  const decreaseRaw = matchesTrigger(text, DECREASE_TRIGGERS);
+  if (decreaseRaw !== null) {
+    const cleaned = stripListSuffix(decreaseRaw);
+    const { item, quantity } = extractQtyUnit(cleaned);
+    return { action: 'decrease', item, quantity, unit: 'item' };
+  }
+
+  // 3d. Navigate
+  const navigateRaw = matchesTrigger(text, NAVIGATE_TRIGGERS);
+  if (navigateRaw !== null) {
+    return { action: 'navigate', item: '', quantity: 1, unit: 'item', destination: navigateRaw.trim() };
+  }
+
 
   // 4. Search
   const searchRaw = matchesTrigger(text, SEARCH_TRIGGERS);

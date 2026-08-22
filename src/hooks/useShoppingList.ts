@@ -107,5 +107,35 @@ export function useShoppingList() {
     setHistory(prev => prev.filter(i => i.id !== id));
   }, []);
 
-  return { items, history, dismissed, addItem, removeItem, toggleCheck, checkByName, clearList, updateQuantity, dismissSuggestion, clearDismissed, clearHistory, removeFromHistory };
+  const uncheckByName = useCallback((name: string) => {
+    setItems(prev => prev.map(i =>
+      i.name.toLowerCase().includes(name.toLowerCase()) ? { ...i, checked: false } : i
+    ));
+  }, []);
+
+  const clearChecked = useCallback(() => {
+    setItems(prev => {
+      const checkedItems = prev.filter(i => i.checked);
+      setHistory(h => [...h.slice(-(100 - checkedItems.length)), ...checkedItems]);
+      return prev.filter(i => !i.checked);
+    });
+  }, []);
+
+  const adjustQuantityByName = useCallback((name: string, delta: number) => {
+    setItems(prev => {
+      return prev.map(i => {
+        if (i.name.toLowerCase().includes(name.toLowerCase())) {
+          return { ...i, quantity: Math.max(1, i.quantity + delta) };
+        }
+        return i;
+      });
+    });
+  }, []);
+
+  return { 
+    items, history, dismissed, 
+    addItem, removeItem, toggleCheck, checkByName, uncheckByName,
+    clearList, clearChecked, updateQuantity, adjustQuantityByName,
+    dismissSuggestion, clearDismissed, clearHistory, removeFromHistory 
+  };
 }
