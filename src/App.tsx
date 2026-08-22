@@ -184,8 +184,8 @@ export default function App() {
         </button>
         <span className="vc-topnav-brand">VocalCart</span>
         <div className="vc-topnav-right">
-          <button className="vc-icon-btn"><span className="material-symbols-outlined">notifications</span></button>
-          <button className="vc-icon-btn"><span className="material-symbols-outlined">shopping_cart</span></button>
+          <button className="vc-icon-btn" onClick={() => toast('No new notifications', 'info')}><span className="material-symbols-outlined">notifications</span></button>
+          <button className="vc-icon-btn" onClick={() => setActiveNav('list')}><span className="material-symbols-outlined">shopping_cart</span></button>
           <div className="vc-avatar">V</div>
         </div>
       </nav>
@@ -216,8 +216,8 @@ export default function App() {
           ))}
         </nav>
         <div className="vc-sidebar-footer">
-          <button className="vc-sidenav-item"><span className="material-symbols-outlined">help</span><span>{t('help')}</span></button>
-          <button className="vc-sidenav-item"><span className="material-symbols-outlined">shield</span><span>{t('privacy')}</span></button>
+          <button className="vc-sidenav-item" onClick={() => toast('Help center coming soon!', 'info')}><span className="material-symbols-outlined">help</span><span>{t('help')}</span></button>
+          <button className="vc-sidenav-item" onClick={() => toast('Privacy policy coming soon!', 'info')}><span className="material-symbols-outlined">shield</span><span>{t('privacy')}</span></button>
         </div>
       </aside>
       {sidebarOpen && <div className="vc-overlay" onClick={() => setSidebarOpen(false)} />}
@@ -388,7 +388,15 @@ export default function App() {
                 <button className="vc-action-chip" onClick={clearList}>
                   <span className="material-symbols-outlined">delete</span> Clear
                 </button>
-                <button className="vc-action-chip vc-action-chip--primary">
+                <button className="vc-action-chip vc-action-chip--primary" onClick={() => {
+                  const text = items.map(i => `${i.checked ? '☑' : '☐'} ${i.name} (x${i.quantity})`).join('\n');
+                  if (navigator.share) {
+                    navigator.share({ title: 'My Grocery List', text });
+                  } else {
+                    navigator.clipboard.writeText(text);
+                    toast('List copied to clipboard!', 'success');
+                  }
+                }}>
                   <span className="material-symbols-outlined">share</span> Share
                 </button>
               </div>
