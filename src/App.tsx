@@ -171,11 +171,6 @@ export default function App() {
         </button>
         <span className="vc-topnav-brand">VocalCart</span>
         <div className="vc-topnav-right">
-          <div className="vc-lang-row">
-            {LANGS.map(l => (
-              <button key={l.code} className={`vc-lang-btn ${lang === l.code ? 'active' : ''}`} onClick={() => setLang(l.code)}>{l.flag}</button>
-            ))}
-          </div>
           <button className="vc-icon-btn"><span className="material-symbols-outlined">notifications</span></button>
           <button className="vc-icon-btn"><span className="material-symbols-outlined">shopping_cart</span></button>
           <div className="vc-avatar">V</div>
