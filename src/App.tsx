@@ -29,7 +29,15 @@ const AISLE_ICONS: Record<string, string> = {
 
 export default function App() {
   const { t } = useTranslation();
-  const [lang, setLang] = useState<Language>('en-US');
+  const [lang, setLang] = useState<Language>(() => {
+    const navLang = navigator.language.toLowerCase();
+    if (navLang.startsWith('es')) return 'es-ES';
+    if (navLang.startsWith('fr')) return 'fr-FR';
+    if (navLang.startsWith('de')) return 'de-DE';
+    if (navLang.startsWith('hi')) return 'hi-IN';
+    if (navLang.startsWith('zh')) return 'zh-CN';
+    return 'en-US';
+  });
   const [search, setSearch] = useState('');
   const [heard, setHeard] = useState('');
   const [activeNav, setActiveNav] = useState<'voice'|'list'|'suggest'|'search'|'history'|'settings'>('voice');
