@@ -40,7 +40,7 @@ export default function App() {
   const [searchFilter, setSearchFilter] = useState('');
   const [maxPriceFilter, setMaxPriceFilter] = useState<number | null>(null);
 
-  const { items, history, dismissed, addItem, removeItem, toggleCheck, checkByName, clearList, updateQuantity, dismissSuggestion, clearDismissed } = useShoppingList();
+  const { items, history, dismissed, addItem, removeItem, toggleCheck, checkByName, clearList, updateQuantity, dismissSuggestion, clearDismissed, clearHistory, removeFromHistory } = useShoppingList();
 
   const handleVoice = useCallback((transcript: string) => {
     const cmd = parseCommand(transcript);
@@ -639,6 +639,12 @@ export default function App() {
           <div className="vc-list-page">
             <div className="vc-list-page-header">
               <div><h1 className="vc-page-title">Purchase History</h1><p className="vc-page-sub">{history.length} items</p></div>
+              {history.length > 0 && (
+                <button className="vc-reset-dismissed-btn" onClick={() => { clearHistory(); toast('History cleared', 'info'); }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete_sweep</span>
+                  Clear All
+                </button>
+              )}
             </div>
             {history.length === 0 ? (
               <div className="vc-empty-full">
@@ -655,10 +661,15 @@ export default function App() {
                       <h3 className="vc-aisle-item-name">{item.name}</h3>
                       <p className="vc-aisle-qty-label">{item.quantity} {item.unit !== 'item' ? item.unit : 'item'} · {item.category}</p>
                     </div>
-                    <button className="vc-stock-add-btn" style={{ marginLeft: 'auto' }}
-                      onClick={() => { addItem(item.name, item.quantity, item.unit); toast(`Re-added "${item.name}"`, 'success'); setActiveNav('list'); }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>replay</span> Re-add
-                    </button>
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button className="vc-stock-add-btn"
+                        onClick={() => { addItem(item.name, item.quantity, item.unit); toast(`Re-added "${item.name}"`, 'success'); setActiveNav('list'); }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>replay</span> Re-add
+                      </button>
+                      <button className="vc-del-inline" title="Remove from history" onClick={() => { removeFromHistory(item.id); toast(`Removed "${item.name}" from history`, 'info'); }}>
+                        <span className="material-symbols-outlined">close</span>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

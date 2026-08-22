@@ -101,5 +101,11 @@ export function useShoppingList() {
 
   const clearDismissed = useCallback(() => setDismissed([]), []);
 
-  return { items, history, dismissed, addItem, removeItem, toggleCheck, checkByName, clearList, updateQuantity, dismissSuggestion, clearDismissed };
+  const clearHistory = useCallback(() => setHistory([]), []);
+
+  const removeFromHistory = useCallback((id: string) => {
+    setHistory(prev => prev.filter(i => i.id !== id));
+  }, []);
+
+  return { items, history, dismissed, addItem, removeItem, toggleCheck, checkByName, clearList, updateQuantity, dismissSuggestion, clearDismissed, clearHistory, removeFromHistory };
 }
