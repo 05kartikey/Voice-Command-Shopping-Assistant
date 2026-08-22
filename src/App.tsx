@@ -6,7 +6,8 @@ import { parseCommand } from './utils/nlp';
 import { generateSuggestions, getSubstitutes } from './utils/suggestions';
 import { useVoiceRecognition } from './hooks/useVoiceRecognition';
 import { useShoppingList } from './hooks/useShoppingList';
-import ToastContainer, { toast } from './components/Toast';
+import ToastContainer from './components/Toast';
+import { toast } from './utils/toast';
 import { CATEGORY_ICONS } from './utils/categories';
 import './App.css';
 

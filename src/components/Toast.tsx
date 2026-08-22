@@ -1,37 +1,28 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, AlertCircle, X } from 'lucide-react';
-
-interface Toast {
-  id: string;
-  message: string;
-  type: 'success' | 'error' | 'info';
-}
-
-let addToast: ((msg: string, type?: Toast['type']) => void) | null = null;
-
-export function toast(message: string, type: Toast['type'] = 'success') {
-  addToast?.(message, type);
-}
+import { registerToastListener, type ToastItem } from '../utils/toast';
 
 export default function ToastContainer() {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   useEffect(() => {
-    addToast = (message, type = 'success') => {
-      const id = `${Date.now()}`;
+    registerToastListener((message, type = 'success') => {
+      const id = `${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
       setToasts(prev => [...prev.slice(-3), { id, message, type }]);
       setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+    });
+    return () => {
+      registerToastListener(null);
     };
-    return () => { addToast = null; };
   }, []);
 
   return (
-    <div className="toast-container">
+    <div className="toast-container" role="status" aria-live="polite">
       {toasts.map(t => (
         <div key={t.id} className={`toast toast-${t.type}`}>
           {t.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
           <span>{t.message}</span>
-          <button onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}>
+          <button onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))} aria-label="Dismiss notification">
             <X size={12} />
           </button>
         </div>
