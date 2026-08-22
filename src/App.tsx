@@ -249,7 +249,7 @@ export default function App() {
                   {voice.listening
                     ? (voice.transcript
                         ? <>"<span className="vc-transcript-highlight">{voice.transcript}</span>"</>
-                        : <span className="vc-transcript-muted">Listening…</span>)
+                        : <span className="vc-transcript-muted">{t('listening')}</span>)
                     : heard
                       ? <>"<span className="vc-transcript-highlight">{heard}</span>"</>
                       : <span className="vc-transcript-muted">"Add 2 liters of milk to the grocery list…"</span>
@@ -264,7 +264,7 @@ export default function App() {
                 )}
                 {!voice.listening && (
                   <p className="vc-transcript-hint">
-                    {!voice.supported ? '⚠ Use Chrome or Edge for voice' : 'Try: "Add milk" · "Remove bread" · "Clear the list"'}
+                    {!voice.supported ? '⚠ Use Chrome or Edge for voice' : t('voiceHint')}
                   </p>
                 )}
               </div>
@@ -279,10 +279,10 @@ export default function App() {
               {/* Quick action chips */}
               <div className="vc-quick-chips">
                 {[
-                  { icon: 'shopping_basket', label: 'ADD ITEM', action: () => setActiveNav('list') },
-                  { icon: 'delete_sweep', label: 'CLEAR LIST', action: () => { clearList(); toast('List cleared', 'info'); } },
-                  { icon: 'search', label: 'SEARCH', action: () => setActiveNav('search') },
-                  { icon: 'lightbulb', label: 'SUGGEST', action: () => setActiveNav('suggest') },
+                  { icon: 'shopping_basket', label: t('addItem'), action: () => setActiveNav('list') },
+                  { icon: 'delete_sweep', label: t('clearList'), action: () => { clearList(); toast('List cleared', 'info'); } },
+                  { icon: 'search', label: t('search'), action: () => setActiveNav('search') },
+                  { icon: 'lightbulb', label: t('suggestions'), action: () => setActiveNav('suggest') },
                 ].map(c => (
                   <button key={c.label} className="vc-quick-chip" onClick={c.action}>
                     <span className="material-symbols-outlined">{c.icon}</span>
@@ -296,15 +296,15 @@ export default function App() {
             <div className="vc-voice-right">
               <div className="vc-panel">
                 <div className="vc-panel-header">
-                  <h3 className="vc-panel-title">Grocery List</h3>
-                  <span className="vc-count-badge">{items.length} ITEMS</span>
+                  <h3 className="vc-panel-title">{t('groceryList')}</h3>
+                  <span className="vc-count-badge">{items.length} {t('itemsCaps')}</span>
                 </div>
                 <div className="vc-panel-body">
                   {items.length === 0 ? (
                     <div className="vc-empty">
                       <span className="material-symbols-outlined" style={{ fontSize: '2.5rem', color: 'var(--outline)' }}>shopping_cart</span>
-                      <p>Your list is empty</p>
-                      <p style={{ fontSize: '0.82rem', color: 'var(--outline)' }}>Say "Add milk" to get started</p>
+                      <p>{t('emptyList')}</p>
+                      <p style={{ fontSize: '0.82rem', color: 'var(--outline)' }}>{t('emptyListHint')}</p>
                     </div>
                   ) : (
                     Object.entries(grouped).map(([cat, catItems]) => (
@@ -333,7 +333,7 @@ export default function App() {
                 {items.length > 0 && (
                   <div className="vc-panel-footer">
                     <button className="vc-checkout-btn" onClick={() => setActiveNav('list')}>
-                      View Full List <span className="material-symbols-outlined">arrow_forward</span>
+                      {t('viewFullList')} <span className="material-symbols-outlined">arrow_forward</span>
                     </button>
                   </div>
                 )}
@@ -347,12 +347,12 @@ export default function App() {
           <div className="vc-list-page">
             <div className="vc-list-page-header">
               <div>
-                <h1 className="vc-page-title">Weekly Groceries</h1>
-                <p className="vc-page-sub">{checkedCount} of {items.length} items gathered</p>
+                <h1 className="vc-page-title">{t('weeklyGroceries')}</h1>
+                <p className="vc-page-sub">{checkedCount} of {items.length} {t('itemsGathered')}</p>
               </div>
               <button className="vc-voice-assist-btn" onClick={() => setActiveNav('voice')}>
                 <span className="material-symbols-outlined">record_voice_over</span>
-                <span>VOICE ASSIST</span>
+                <span>{t('voiceAssist')}</span>
               </button>
             </div>
 
@@ -366,7 +366,7 @@ export default function App() {
             {/* Bulk actions */}
             <div className="vc-bulk-actions">
               <form className="vc-add-form" onSubmit={handleManualAdd}>
-                <input className="vc-add-input" value={newItemName} onChange={e => setNewItemName(e.target.value)} placeholder="Add an item…" id="vc-add-input" />
+                <input className="vc-add-input" value={newItemName} onChange={e => setNewItemName(e.target.value)} placeholder={t('addAnItem')} id="vc-add-input" />
                 <div className="vc-add-qty-ctrl">
                   <button type="button" onClick={() => setNewItemQty(q => Math.max(1,q-1))}><span className="material-symbols-outlined">remove</span></button>
                   <span>{newItemQty}</span>
@@ -379,7 +379,7 @@ export default function App() {
               <div className="vc-action-chips">
                 <div className="vc-search-inline">
                   <span className="material-symbols-outlined">search</span>
-                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search…" />
+                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('searchPlaceholder')} />
                   {maxPriceFilter !== null && (
                     <span className="vc-price-badge">Under ${maxPriceFilter} <button onClick={() => setMaxPriceFilter(null)}><span className="material-symbols-outlined">close</span></button></span>
                   )}
@@ -398,7 +398,7 @@ export default function App() {
             {items.length === 0 ? (
               <div className="vc-empty-full">
                 <span className="material-symbols-outlined" style={{ fontSize: '3rem', color: 'var(--outline)' }}>shopping_cart</span>
-                <p className="vc-empty-title">Your list is empty</p>
+                <p className="vc-empty-title">{t('emptyList')}</p>
                 <p className="vc-empty-sub">Use the mic or type above to add items</p>
               </div>
             ) : (
@@ -466,8 +466,8 @@ export default function App() {
             <div className="vc-suggest-hero">
               <div className="vc-suggest-hero-row">
                 <div>
-                  <h1 className="vc-suggest-title">Smart Suggestions</h1>
-                  <p className="vc-suggest-desc">Curated recommendations based on your recent habits, low stock alerts, and seasonal availability.</p>
+                  <h1 className="vc-suggest-title">{t('smartSuggestions')}</h1>
+                  <p className="vc-suggest-desc">{t('suggestDesc')}</p>
                 </div>
                 {dismissed.length > 0 && (
                   <button className="vc-reset-dismissed-btn" onClick={clearDismissed}>
@@ -636,7 +636,7 @@ export default function App() {
                 {items.length === 0 ? (
                   <div className="vc-empty-full">
                     <span className="material-symbols-outlined" style={{ fontSize: '3rem', color: 'var(--outline)' }}>search</span>
-                    <p className="vc-empty-title">Your list is empty</p>
+                    <p className="vc-empty-title">{t('emptyList')}</p>
                     <p className="vc-empty-sub">Add items first, then search through them</p>
                   </div>
                 ) : searchFiltered.length === 0 ? (

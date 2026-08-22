@@ -4,6 +4,7 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   'en-US': {
     translation: {
+      groceryList: 'Grocery List', itemsCaps: 'ITEMS', emptyList: 'Your list is empty', emptyListHint: 'Say "Add milk" to get started', viewFullList: 'View Full List', weeklyGroceries: 'Weekly Groceries', itemsGathered: 'items gathered', voiceAssist: 'VOICE ASSIST', addAnItem: 'Add an item...', addBtn: 'Add', clearBtn: 'Clear', shareBtn: 'Share', smartSuggestions: 'Smart Suggestions', suggestDesc: 'Curated recommendations based on your recent habits, low stock alerts, and seasonal availability.', lowStock: 'Low on Stock', smartSubs: 'Smart Substitutes', seasonalPicks: 'Seasonal Picks',
       voice: 'Voice', myLists: 'My Lists', settings: 'Settings', search: 'Search', welcomeBack: 'Welcome back', companion: 'Your shopping companion', newList: 'New List', help: 'Help', privacy: 'Privacy', voiceLang: 'Voice Language', voiceRef: 'Voice Commands Reference',
       title: 'Voice Shopping Assistant',
       tapToSpeak: 'Tap to Speak',
@@ -31,6 +32,7 @@ const resources = {
   },
   'es-ES': {
     translation: {
+      groceryList: 'Lista de Compras', itemsCaps: 'ARTÍCULOS', emptyList: 'Tu lista está vacía', emptyListHint: 'Di "Agregar leche" para comenzar', viewFullList: 'Ver Lista Completa', weeklyGroceries: 'Compras Semanales', itemsGathered: 'artículos recogidos', voiceAssist: 'ASISTENTE DE VOZ', addAnItem: 'Agregar un artículo...', addBtn: 'Agregar', clearBtn: 'Limpiar', shareBtn: 'Compartir', smartSuggestions: 'Sugerencias Inteligentes', suggestDesc: 'Recomendaciones seleccionadas según tus hábitos recientes.', lowStock: 'Stock Bajo', smartSubs: 'Sustitutos Inteligentes', seasonalPicks: 'Selecciones de Temporada',
       voice: 'Voz', myLists: 'Mis Listas', settings: 'Ajustes', search: 'Buscar', welcomeBack: 'Bienvenido de nuevo', companion: 'Tu compañero de compras', newList: 'Nueva Lista', help: 'Ayuda', privacy: 'Privacidad', voiceLang: 'Idioma de Voz', voiceRef: 'Referencia de Comandos de Voz',
       title: 'Asistente de Compras por Voz',
       tapToSpeak: 'Toca para Hablar',
@@ -58,6 +60,7 @@ const resources = {
   },
   'fr-FR': {
     translation: {
+      groceryList: 'Liste de Courses', itemsCaps: 'ARTICLES', emptyList: 'Votre liste est vide', emptyListHint: 'Dites "Ajouter du lait" pour commencer', viewFullList: 'Voir Toute la Liste', weeklyGroceries: 'Courses de la Semaine', itemsGathered: 'articles rassemblés', voiceAssist: 'ASSISTANT VOCAL', addAnItem: 'Ajouter un article...', addBtn: 'Ajouter', clearBtn: 'Vider', shareBtn: 'Partager', smartSuggestions: 'Suggestions Intelligentes', suggestDesc: 'Recommandations basées sur vos habitudes récentes.', lowStock: 'Stock Faible', smartSubs: 'Substituts Intelligents', seasonalPicks: 'Sélections de Saison',
       voice: 'Voix', myLists: 'Mes Listes', settings: 'Paramètres', search: 'Rechercher', welcomeBack: 'Bon retour', companion: 'Votre compagnon', newList: 'Nouvelle Liste', help: 'Aide', privacy: 'Confidentialité', voiceLang: 'Langue Vocale', voiceRef: 'Commandes Vocales',
       title: 'Assistant Shopping Vocal',
       tapToSpeak: 'Appuyez pour Parler',
@@ -85,6 +88,7 @@ const resources = {
   },
   'de-DE': {
     translation: {
+      groceryList: 'Einkaufsliste', itemsCaps: 'ARTIKEL', emptyList: 'Ihre Liste ist leer', emptyListHint: 'Sagen Sie "Milch hinzufügen"', viewFullList: 'Ganze Liste ansehen', weeklyGroceries: 'Wocheneinkauf', itemsGathered: 'Artikel gesammelt', voiceAssist: 'SPRACHASSISTENT', addAnItem: 'Artikel hinzufügen...', addBtn: 'Hinzufügen', clearBtn: 'Leeren', shareBtn: 'Teilen', smartSuggestions: 'Intelligente Vorschläge', suggestDesc: 'Empfehlungen basierend auf Ihren Gewohnheiten.', lowStock: 'Knapper Bestand', smartSubs: 'Clevere Alternativen', seasonalPicks: 'Saisonale Auswahl',
       voice: 'Stimme', myLists: 'Meine Listen', settings: 'Einstellungen', search: 'Suche', welcomeBack: 'Willkommen zurück', companion: 'Ihr Einkaufsbegleiter', newList: 'Neue Liste', help: 'Hilfe', privacy: 'Datenschutz', voiceLang: 'Sprache', voiceRef: 'Sprachbefehle',
       title: 'Sprach-Einkaufsassistent',
       tapToSpeak: 'Tippen zum Sprechen',
@@ -112,6 +116,7 @@ const resources = {
   },
   'hi-IN': {
     translation: {
+      groceryList: 'किराने की सूची', itemsCaps: 'आइटम', emptyList: 'आपकी सूची खाली है', emptyListHint: '"दूध जोड़ें" कहने की कोशिश करें', viewFullList: 'पूरी सूची देखें', weeklyGroceries: 'साप्ताहिक किराने का सामान', itemsGathered: 'आइटम इकट्ठे किए गए', voiceAssist: 'वॉयस असिस्टेंट', addAnItem: 'एक आइटम जोड़ें...', addBtn: 'जोड़ें', clearBtn: 'साफ़ करें', shareBtn: 'साझा करें', smartSuggestions: 'स्मार्ट सुझाव', suggestDesc: 'आपकी हाल की आदतों और मौसमी उपलब्धता के आधार पर सुझाव।', lowStock: 'स्टॉक कम है', smartSubs: 'स्मार्ट विकल्प', seasonalPicks: 'मौसमी चयन',
       voice: 'आवाज़', myLists: 'मेरी सूचियां', settings: 'सेटिंग्स', search: 'खोजें', welcomeBack: 'वापसी पर स्वागत है', companion: 'आपका शॉपिंग साथी', newList: 'नई सूची', help: 'मदद', privacy: 'गोपनीयता', voiceLang: 'आवाज़ की भाषा', voiceRef: 'वॉयस कमांड संदर्भ',
       title: 'वॉयस शॉपिंग असिस्टेंट',
       tapToSpeak: 'बोलने के लिए टैप करें',
@@ -139,6 +144,7 @@ const resources = {
   },
   'zh-CN': {
     translation: {
+      groceryList: '购物清单', itemsCaps: '件商品', emptyList: '您的列表是空的', emptyListHint: '说"添加牛奶"开始吧', viewFullList: '查看完整列表', weeklyGroceries: '每周杂货', itemsGathered: '已收集', voiceAssist: '语音助手', addAnItem: '添加商品...', addBtn: '添加', clearBtn: '清空', shareBtn: '分享', smartSuggestions: '智能建议', suggestDesc: '根据您最近的习惯和季节性推荐的商品。', lowStock: '库存不足', smartSubs: '智能替代品', seasonalPicks: '当季精选',
       voice: '语音', myLists: '我的列表', settings: '设置', search: '搜索', welcomeBack: '欢迎回来', companion: '您的购物伴侣', newList: '新列表', help: '帮助', privacy: '隐私', voiceLang: '语音语言', voiceRef: '语音命令参考',
       title: '语音购物助手',
       tapToSpeak: '点击说话',
