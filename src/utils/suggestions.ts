@@ -1,6 +1,20 @@
 import type { ShoppingItem, Suggestion } from '../types';
 import { categorize } from './categories';
 
+// Basic plural normalization for suggestions
+function normalize(name: string): string {
+  let lower = name.toLowerCase().trim();
+  // Simple English stemming (apples -> apple, potatoes -> potato, berries -> berry)
+  if (lower.endsWith('ies') && lower.length > 4) {
+    return lower.slice(0, -3) + 'y';
+  } else if (lower.endsWith('oes') && lower.length > 4) {
+    return lower.slice(0, -2);
+  } else if (lower.endsWith('s') && !lower.endsWith('ss') && lower.length > 3) {
+    return lower.slice(0, -1);
+  }
+  return lower;
+}
+
 // Seasonal items by month (0=Jan)
 const SEASONAL: Record<number, string[]> = {
   0: ['oranges', 'grapefruit', 'kale', 'sweet potatoes'],
@@ -45,33 +59,39 @@ const SUBSTITUTES: Record<string, string[]> = {
 };
 
 export function getSubstitutes(itemName: string): string[] {
-  const lower = itemName.toLowerCase();
+  const norm = normalize(itemName);
   for (const [key, subs] of Object.entries(SUBSTITUTES)) {
-    if (lower.includes(key)) return subs;
+    if (norm.includes(normalize(key))) return subs;
   }
   return [];
 }
 
 export function generateSuggestions(items: ShoppingItem[], history: ShoppingItem[]): Suggestion[] {
   const suggestions: Suggestion[] = [];
-  const currentNames = new Set(items.map(i => i.name.toLowerCase()));
+  
+  // Track normalized names to avoid duplicate suggestions of plurals
+  const currentNorms = new Set(items.map(i => normalize(i.name)));
   const month = new Date().getMonth();
 
   // History-based: items bought frequently but not in current list
-  const freq: Record<string, number> = {};
+  const freq: Record<string, { name: string, count: number }> = {};
   history.forEach(item => {
-    const key = item.name.toLowerCase();
-    freq[key] = (freq[key] || 0) + 1;
+    const norm = normalize(item.name);
+    if (!freq[norm]) {
+      freq[norm] = { name: item.name, count: 0 };
+    }
+    freq[norm].count += 1;
   });
 
-  Object.entries(freq)
-    .sort((a, b) => b[1] - a[1])
+  Object.values(freq)
+    .sort((a, b) => b.count - a.count)
     .slice(0, 10)
-    .forEach(([name]) => {
-      if (!currentNames.has(name) && freq[name] >= 2) {
+    .forEach(({ name, count }) => {
+      const norm = normalize(name);
+      if (!currentNorms.has(norm) && count >= 2) {
         suggestions.push({
           name,
-          reason: `You've bought this ${freq[name]} times before`,
+          reason: `You've bought this ${count} times before`,
           category: categorize(name),
         });
       }
@@ -79,11 +99,12 @@ export function generateSuggestions(items: ShoppingItem[], history: ShoppingItem
 
   // Pairing-based suggestions
   items.forEach(item => {
-    const lower = item.name.toLowerCase();
+    const normItem = normalize(item.name);
     for (const [key, pairs] of Object.entries(PAIRINGS)) {
-      if (lower.includes(key)) {
+      if (normItem.includes(normalize(key))) {
         pairs.forEach(pair => {
-          if (!currentNames.has(pair) && !suggestions.find(s => s.name === pair)) {
+          const normPair = normalize(pair);
+          if (!currentNorms.has(normPair) && !suggestions.find(s => normalize(s.name) === normPair)) {
             suggestions.push({ name: pair, reason: `Goes well with ${item.name}`, category: categorize(pair) });
           }
         });
@@ -94,7 +115,8 @@ export function generateSuggestions(items: ShoppingItem[], history: ShoppingItem
   // Seasonal suggestions
   const seasonal = SEASONAL[month] || [];
   seasonal.forEach(item => {
-    if (!currentNames.has(item) && !suggestions.find(s => s.name === item)) {
+    const normItem = normalize(item);
+    if (!currentNorms.has(normItem) && !suggestions.find(s => normalize(s.name) === normItem)) {
       suggestions.push({ name: item, reason: 'In season right now', category: categorize(item) });
     }
   });

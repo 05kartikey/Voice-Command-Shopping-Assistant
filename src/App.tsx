@@ -38,6 +38,7 @@ export default function App() {
   const [newItemQty, setNewItemQty] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
+  const [maxPriceFilter, setMaxPriceFilter] = useState<number | null>(null);
 
   const { items, history, dismissed, addItem, removeItem, toggleCheck, checkByName, clearList, updateQuantity, dismissSuggestion, clearDismissed } = useShoppingList();
 
@@ -65,8 +66,13 @@ export default function App() {
         break;
       case 'search':
         setSearchFilter(cmd.searchQuery || '');
+        setMaxPriceFilter(cmd.maxPrice || null);
         setActiveNav('search');
-        toast(`Searching for "${cmd.searchQuery}"`, 'info');
+        if (cmd.maxPrice) {
+          toast(`Searching for "${cmd.searchQuery || 'items'}" under $${cmd.maxPrice}`, 'info');
+        } else {
+          toast(`Searching for "${cmd.searchQuery}"`, 'info');
+        }
         break;
       default:
         toast(t('didntUnderstand'), 'error');
@@ -77,13 +83,15 @@ export default function App() {
   const allSuggestions = useMemo(() => generateSuggestions(items, history), [items, history]);
   const suggestions = useMemo(() => allSuggestions.filter(s => !dismissed.includes(s.name.toLowerCase())), [allSuggestions, dismissed]);
 
-  const listFiltered = search
-    ? items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()) || i.category.includes(search.toLowerCase()))
-    : items;
+  const matchSearch = (query: string, text: string, category: string) => {
+    if (!query) return true;
+    const terms = query.toLowerCase().trim().split(/\s+/);
+    const target = (text + ' ' + category).toLowerCase();
+    return terms.every(term => target.includes(term));
+  };
 
-  const searchFiltered = searchFilter
-    ? items.filter(i => i.name.toLowerCase().includes(searchFilter.toLowerCase()) || i.category.includes(searchFilter.toLowerCase()))
-    : items;
+  const listFiltered = items.filter(i => matchSearch(search, i.name, i.category) && (maxPriceFilter === null || (i.price && i.price <= maxPriceFilter)));
+  const searchFiltered = items.filter(i => matchSearch(searchFilter, i.name, i.category) && (maxPriceFilter === null || (i.price && i.price <= maxPriceFilter)));
 
   const grouped = listFiltered.reduce<Record<string, typeof items>>((acc, item) => {
     (acc[item.category] = acc[item.category] || []).push(item);
@@ -325,6 +333,9 @@ export default function App() {
                 <div className="vc-search-inline">
                   <span className="material-symbols-outlined">search</span>
                   <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search…" />
+                  {maxPriceFilter !== null && (
+                    <span className="vc-price-badge">Under ${maxPriceFilter} <button onClick={() => setMaxPriceFilter(null)}><span className="material-symbols-outlined">close</span></button></span>
+                  )}
                   {search && <button onClick={() => setSearch('')}><span className="material-symbols-outlined">close</span></button>}
                 </div>
                 <button className="vc-action-chip" onClick={clearList}>
@@ -360,7 +371,10 @@ export default function App() {
                             <span style={{ fontSize: '2rem' }}>{CATEGORY_ICONS[item.category] || '🛒'}</span>
                           </div>
                           <div className="vc-aisle-item-body">
-                            <h3 className={`vc-aisle-item-name ${item.checked ? 'strikethrough' : ''}`}>{item.name}</h3>
+                            <div className="vc-aisle-item-name-row">
+                              <h3 className={`vc-aisle-item-name ${item.checked ? 'strikethrough' : ''}`}>{item.name}</h3>
+                              {item.price !== undefined && <span className="vc-aisle-item-price">${item.price.toFixed(2)}</span>}
+                            </div>
                             <div className="vc-aisle-item-qty-row">
                               <button onClick={() => updateQuantity(item.id, item.quantity - 1)}><span className="material-symbols-outlined">remove</span></button>
                               <span className="vc-aisle-qty-label">{item.quantity}{item.unit !== 'item' ? ` ${item.unit.toUpperCase()}` : ''}</span>

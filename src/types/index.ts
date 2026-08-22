@@ -4,6 +4,7 @@ export interface ShoppingItem {
   quantity: number;
   unit: string;
   category: string;
+  price?: number;
   checked: boolean;
   addedAt: number;
 }

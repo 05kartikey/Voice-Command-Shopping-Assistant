@@ -3,6 +3,8 @@ import type { ShoppingItem } from '../types';
 import { categorize } from '../utils/categories';
 import { capitalize } from '../utils/nlp';
 
+import { generateMockPrice } from '../utils/pricing';
+
 const STORAGE_KEY = 'vsa_list';
 const HISTORY_KEY = 'vsa_history';
 const DISMISSED_KEY = 'vsa_dismissed';
@@ -46,6 +48,7 @@ export function useShoppingList() {
         quantity,
         unit,
         category: categorize(trimmed),
+        price: generateMockPrice(trimmed),
         checked: false,
         addedAt: Date.now(),
       };
