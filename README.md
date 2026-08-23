@@ -9,6 +9,8 @@
 
 A modern, privacy-first, voice-powered grocery shopping assistant. Built with **React 19**, **TypeScript**, and the **Web Speech API**, it turns spoken phrases into organized, categorized shopping lists with intelligent ingredient pairings, seasonal suggestions, and dietary substitutions.
 
+**🌍 Live Demo:** [https://voice-command-shopping-assistant.vercel.app](https://voice-command-shopping-assistant.vercel.app)
+
 ---
 
 ## 📑 Table of Contents
