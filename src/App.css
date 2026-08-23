@@ -379,3 +379,318 @@ ul{list-style:none}
 .vc-price-badge button span {
   font-size: 14px;
 }
+
+/* ═══════════════════════════════════════════════
+   AI VOICE INTELLIGENCE & MULTI-ITEM STYLING
+   ═══════════════════════════════════════════════ */
+
+/* AI Mode Tag on Voice Dashboard */
+.vc-voice-mode-tag-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.vc-voice-mode-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(8px);
+}
+
+.vc-voice-mode-tag--ai {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.12));
+  color: #6366f1;
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.vc-voice-mode-tag--ai:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(168, 85, 247, 0.22));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.vc-voice-mode-tag--local {
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  border-color: var(--outline-variant);
+}
+
+.vc-voice-mode-tag--local:hover {
+  background: var(--surface-container-highest);
+  color: var(--on-surface);
+}
+
+.vc-voice-mode-arrow {
+  opacity: 0.6;
+  margin-left: 2px;
+}
+
+/* AI Thinking Orb */
+.vc-mic-orb.ai-thinking {
+  background: linear-gradient(135deg, #6366f1, #a855f7) !important;
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.5) !important;
+  animation: vc-ai-pulse 1.2s infinite ease-in-out !important;
+}
+
+@keyframes vc-ai-pulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.08); filter: brightness(1.2); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.vc-ai-analyzing-msg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--primary);
+  padding: 8px 0;
+}
+
+.vc-sparkle-spin {
+  animation: vc-sparkle 2s infinite linear;
+}
+
+@keyframes vc-sparkle {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.2); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* Extracted Actions Preview */
+.vc-extracted-preview {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: var(--surface-container-high);
+  border-radius: 12px;
+  border: 1px solid var(--outline-variant);
+  animation: vc-fade-in 0.3s ease-out;
+}
+
+.vc-extracted-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.vc-extracted-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vc-extracted-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.82rem;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  padding: 4px 10px;
+  border-radius: 8px;
+  color: var(--on-surface);
+}
+
+.vc-extracted-chip strong {
+  color: var(--primary);
+  margin-right: 4px;
+}
+
+/* AI Settings Card */
+.vc-ai-settings-card {
+  background: linear-gradient(180deg, var(--surface-container-lowest) 0%, var(--surface-container-high) 100%);
+  border: 1px solid var(--outline-variant);
+  border-left: 4px solid #6366f1;
+}
+
+.vc-ai-settings-header {
+  margin-bottom: 16px;
+}
+
+.vc-ai-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.vc-ai-status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.vc-ai-status-badge.active {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.vc-ai-status-badge.fallback {
+  background: var(--surface-container-highest);
+  color: var(--on-surface-variant);
+  border: 1px solid var(--outline-variant);
+}
+
+.vc-ai-desc {
+  font-size: 0.85rem;
+  color: var(--on-surface-variant);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.vc-ai-key-section {
+  margin-top: 12px;
+}
+
+.vc-ai-input-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-bottom: 6px;
+}
+
+.vc-ai-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.vc-ai-key-input {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
+  font-size: 0.88rem;
+  font-family: monospace;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.vc-ai-key-input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.vc-ai-key-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: var(--surface-container-highest);
+  border: 1px solid var(--outline-variant);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--on-surface-variant);
+  transition: all 0.2s;
+}
+
+.vc-ai-key-toggle:hover {
+  color: var(--on-surface);
+  background: var(--surface-container-high);
+}
+
+.vc-ai-key-save-btn {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.vc-ai-key-save-btn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.vc-ai-key-clear-btn {
+  padding: 8px 14px;
+  background: transparent;
+  color: var(--error);
+  border: 1px solid var(--outline-variant);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.vc-ai-key-clear-btn:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.vc-ai-key-hint {
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+/* Sample Voice Test Section in Settings */
+.vc-ai-test-section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--outline-variant);
+}
+
+.vc-ai-test-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-bottom: 8px;
+}
+
+.vc-ai-test-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vc-ai-test-chip {
+  text-align: left;
+  padding: 8px 12px;
+  background: var(--surface-container-highest);
+  border: 1px solid var(--outline-variant);
+  border-radius: 8px;
+  color: var(--on-surface);
+  font-size: 0.82rem;
+  font-style: italic;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vc-ai-test-chip:hover {
+  background: var(--surface-container-lowest);
+  border-color: #6366f1;
+  color: #6366f1;
+  transform: translateX(4px);
+}
+
+@keyframes vc-fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -1,8 +1,8 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import './i18n';
-import type { Language } from './types';
-import { parseCommand } from './utils/nlp';
+import type { ParsedCommand } from './types';
+import { parseVoiceWithGemini, getGeminiApiKey, setGeminiApiKey } from './utils/aiParser';
 import { generateSuggestions, getSubstitutes } from './utils/suggestions';
 import { useVoiceRecognition } from './hooks/useVoiceRecognition';
 import { useShoppingList } from './hooks/useShoppingList';
@@ -10,15 +10,6 @@ import ToastContainer from './components/Toast';
 import { toast } from './utils/toast';
 import { CATEGORY_ICONS } from './utils/categories';
 import './App.css';
-
-const LANGS: { code: Language; flag: string }[] = [
-  { code: 'en-US', flag: '🇺🇸' },
-  { code: 'es-ES', flag: '🇪🇸' },
-  { code: 'fr-FR', flag: '🇫🇷' },
-  { code: 'de-DE', flag: '🇩🇪' },
-  { code: 'hi-IN', flag: '🇮🇳' },
-  { code: 'zh-CN', flag: '🇨🇳' },
-];
 
 const AISLE_ICONS: Record<string, string> = {
   produce: 'eco', dairy: 'egg_alt', bakery: 'bakery_dining',
@@ -28,20 +19,7 @@ const AISLE_ICONS: Record<string, string> = {
 };
 
 export default function App() {
-  const { t, i18n } = useTranslation();
-  const [lang, setLang] = useState<Language>(() => {
-    const navLang = navigator.language.toLowerCase();
-    if (navLang.startsWith('es')) return 'es-ES';
-    if (navLang.startsWith('fr')) return 'fr-FR';
-    if (navLang.startsWith('de')) return 'de-DE';
-    if (navLang.startsWith('hi')) return 'hi-IN';
-    if (navLang.startsWith('zh')) return 'zh-CN';
-    return 'en-US';
-  });
-
-  useEffect(() => {
-    i18n.changeLanguage(lang);
-  }, [lang, i18n]);
+  const { t } = useTranslation();
 
   const [search, setSearch] = useState('');
   const [heard, setHeard] = useState('');
@@ -53,85 +31,154 @@ export default function App() {
   const [searchFilter, setSearchFilter] = useState('');
   const [maxPriceFilter, setMaxPriceFilter] = useState<number | null>(null);
 
+  // AI Voice State
+  const [geminiKeyInput, setGeminiKeyInput] = useState(() => getGeminiApiKey());
+  const [hasApiKey, setHasApiKey] = useState(() => !!getGeminiApiKey());
+  const [showKeyField, setShowKeyField] = useState(false);
+  const [isAiProcessing, setIsAiProcessing] = useState(false);
+  const [lastParsedCommands, setLastParsedCommands] = useState<ParsedCommand[]>([]);
+  const [parseSource, setParseSource] = useState<'gemini' | 'local' | null>(null);
+
   const { 
     items, history, dismissed, 
     addItem, removeItem, toggleCheck, checkByName, uncheckByName,
-    clearList, clearChecked, updateQuantity, adjustQuantityByName,
+    clearList, clearChecked, updateQuantity, adjustQuantityByName, setQuantityByName,
     dismissSuggestion, clearDismissed, clearHistory, removeFromHistory 
   } = useShoppingList();
 
-  const handleVoice = useCallback((transcript: string) => {
-    const cmd = parseCommand(transcript);
+  const handleVoice = useCallback(async (transcript: string) => {
     setHeard(transcript);
-    switch (cmd.action) {
-      case 'add':
-        if (!cmd.item) { toast(t('didntUnderstand'), 'error'); return; }
-        addItem(cmd.item, cmd.quantity, cmd.unit);
-        toast(`Added "${cmd.item}" to your list`, 'success');
-        setActiveNav('list');
-        break;
-      case 'remove':
-        removeItem(cmd.item);
-        toast(`Removed "${cmd.item}"`, 'info');
-        break;
-      case 'check':
-        checkByName(cmd.item);
-        toast(`Checked off "${cmd.item}"`, 'success');
-        break;
-      case 'clear':
-        clearList();
-        toast('List cleared', 'info');
-        break;
-      case 'search':
-        setSearchFilter(cmd.searchQuery || '');
-        setMaxPriceFilter(cmd.maxPrice || null);
-        setActiveNav('search');
-        if (cmd.maxPrice) {
-          toast(`Searching for "${cmd.searchQuery || 'items'}" under $${cmd.maxPrice}`, 'info');
-        } else {
-          toast(`Searching for "${cmd.searchQuery}"`, 'info');
-        }
-        break;
-      case 'uncheck':
-        uncheckByName(cmd.item);
-        toast(`Unchecked "${cmd.item}"`, 'info');
-        break;
-      case 'clear_checked':
-        clearChecked();
-        toast('Cleared all purchased items', 'info');
-        break;
-      case 'increase':
-        adjustQuantityByName(cmd.item, cmd.quantity);
-        toast(`Added ${cmd.quantity} more "${cmd.item}"`, 'success');
-        break;
-      case 'decrease':
-        adjustQuantityByName(cmd.item, -cmd.quantity);
-        toast(`Removed ${cmd.quantity} "${cmd.item}"`, 'info');
-        break;
-      case 'navigate': {
-        const dest = cmd.destination?.toLowerCase() || '';
-        if (dest.includes('history') || dest.includes('past')) setActiveNav('history');
-        else if (dest.includes('suggest') || dest.includes('smart')) setActiveNav('suggest');
-        else if (dest.includes('setting') || dest.includes('options')) setActiveNav('settings');
-        else if (dest.includes('search') || dest.includes('find')) setActiveNav('search');
-        else setActiveNav('list');
-        toast(`Navigated to ${dest}`, 'info');
-        break;
-      }
-      case 'total': {
-        const total = items.reduce((sum, item) => sum + ((item.price || 0) * item.quantity), 0);
-        toast(`Your estimated total is $${total.toFixed(2)}`, 'info');
-        break;
-      }
-      case 'unknown':
-        toast(t('didntUnderstand'), 'error');
-        break;
-      default:
-        toast(t('didntUnderstand'), 'error');
-    }
-  }, [addItem, removeItem, checkByName, uncheckByName, clearList, clearChecked, adjustQuantityByName, items, t]);
+    setIsAiProcessing(true);
 
-  const voice = useVoiceRecognition(lang, handleVoice);
+    try {
+      const { commands, source } = await parseVoiceWithGemini(transcript, { currentItems: items });
+      setParseSource(source);
+      setLastParsedCommands(commands);
+
+      if (!commands || commands.length === 0) {
+        toast(t('didntUnderstand') || "Couldn't understand voice command", 'error');
+        return;
+      }
+
+      let addedCount = 0;
+      let removedCount = 0;
+      let checkedCount = 0;
+      let setQtyCount = 0;
+
+      for (const cmd of commands) {
+        switch (cmd.action) {
+          case 'set_quantity':
+            if (cmd.item) {
+              setQuantityByName(cmd.item, cmd.quantity, cmd.unit, cmd.category);
+              setQtyCount++;
+            }
+            break;
+          case 'add':
+            if (cmd.item) {
+              addItem(cmd.item, cmd.quantity, cmd.unit, cmd.category);
+              addedCount++;
+            }
+            break;
+          case 'remove':
+            if (cmd.item) {
+              removeItem(cmd.item);
+              removedCount++;
+            }
+            break;
+          case 'check':
+            if (cmd.item) {
+              checkByName(cmd.item);
+              checkedCount++;
+            }
+            break;
+          case 'clear':
+            clearList();
+            toast('List cleared', 'info');
+            break;
+          case 'clear_checked':
+            clearChecked();
+            toast('Cleared all purchased items', 'info');
+            break;
+          case 'search':
+            setSearchFilter(cmd.searchQuery || '');
+            setMaxPriceFilter(cmd.maxPrice || null);
+            setActiveNav('search');
+            if (cmd.maxPrice) {
+              toast(`Searching for "${cmd.searchQuery || 'items'}" under $${cmd.maxPrice}`, 'info');
+            } else {
+              toast(`Searching for "${cmd.searchQuery}"`, 'info');
+            }
+            break;
+          case 'uncheck':
+            if (cmd.item) {
+              uncheckByName(cmd.item);
+              toast(`Unchecked "${cmd.item}"`, 'info');
+            }
+            break;
+          case 'increase':
+            if (cmd.item) {
+              adjustQuantityByName(cmd.item, cmd.quantity);
+              toast(`Added ${cmd.quantity} more "${cmd.item}"`, 'success');
+            }
+            break;
+          case 'decrease':
+            if (cmd.item) {
+              adjustQuantityByName(cmd.item, -cmd.quantity);
+              toast(`Removed ${cmd.quantity} "${cmd.item}"`, 'info');
+            }
+            break;
+          case 'navigate': {
+            const dest = cmd.destination?.toLowerCase() || '';
+            if (dest.includes('history') || dest.includes('past')) setActiveNav('history');
+            else if (dest.includes('suggest') || dest.includes('smart')) setActiveNav('suggest');
+            else if (dest.includes('setting') || dest.includes('options')) setActiveNav('settings');
+            else if (dest.includes('search') || dest.includes('find')) setActiveNav('search');
+            else setActiveNav('list');
+            toast(`Navigated to ${dest}`, 'info');
+            break;
+          }
+          case 'total': {
+            const total = items.reduce((sum, item) => sum + ((item.price || 0) * item.quantity), 0);
+            toast(`Your estimated total is $${total.toFixed(2)}`, 'info');
+            break;
+          }
+          default:
+            break;
+        }
+      }
+
+      // Provide clear feedback toasts
+      if (setQtyCount > 0) {
+        if (commands.length === 1 && commands[0].action === 'set_quantity') {
+          toast(`Set "${commands[0].item}" to ${commands[0].quantity}`, 'success');
+        } else {
+          toast(`Updated quantity for ${setQtyCount} item${setQtyCount > 1 ? 's' : ''}`, 'success');
+        }
+        setActiveNav('list');
+      }
+      if (addedCount > 0) {
+        if (commands.length === 1 && commands[0].action === 'add') {
+          toast(`Added "${commands[0].item}" (${commands[0].quantity} ${commands[0].unit !== 'item' ? commands[0].unit : ''})`, 'success');
+        } else {
+          toast(`Added ${addedCount} item${addedCount > 1 ? 's' : ''} to your list!`, 'success');
+        }
+        setActiveNav('list');
+      }
+      if (removedCount > 0) {
+        toast(`Removed ${removedCount} item${removedCount > 1 ? 's' : ''}`, 'info');
+      }
+      if (checkedCount > 0) {
+        toast(`Checked off ${checkedCount} item${checkedCount > 1 ? 's' : ''}`, 'success');
+      }
+    } catch (err) {
+      console.error('Error handling voice command:', err);
+      toast('Failed to process voice command', 'error');
+    } finally {
+      setIsAiProcessing(false);
+    }
+  }, [addItem, removeItem, checkByName, uncheckByName, clearList, clearChecked, adjustQuantityByName, setQuantityByName, items, t]);
+
+  const voice = useVoiceRecognition('auto', handleVoice);
   const allSuggestions = useMemo(() => generateSuggestions(items, history), [items, history]);
   const suggestions = useMemo(() => allSuggestions.filter(s => !dismissed.includes(s.name.toLowerCase())), [allSuggestions, dismissed]);
 
@@ -229,32 +276,55 @@ export default function App() {
         {activeNav === 'voice' && (
           <div className="vc-voice-page">
             <div className="vc-voice-left">
+              {/* AI Mode Tag */}
+              <div className="vc-voice-mode-tag-wrap">
+                <button
+                  type="button"
+                  className={`vc-voice-mode-tag ${hasApiKey ? 'vc-voice-mode-tag--ai' : 'vc-voice-mode-tag--local'}`}
+                  onClick={() => setActiveNav('settings')}
+                  title="Click to configure Gemini AI in Settings"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
+                    {hasApiKey ? 'auto_awesome' : 'offline_bolt'}
+                  </span>
+                  <span>{hasApiKey ? 'Gemini 3.7 Flash AI Active' : 'Local Multi-Item Parser'}</span>
+                  <span className="vc-voice-mode-arrow material-symbols-outlined" style={{ fontSize: '14px' }}>tune</span>
+                </button>
+              </div>
+
               {/* Mic orb */}
               <div className="vc-mic-wrap">
-                <div className={`vc-pulse-ring vc-pulse-ring-1 ${voice.listening ? 'active' : ''}`} />
-                <div className={`vc-pulse-ring vc-pulse-ring-2 ${voice.listening ? 'active' : ''}`} style={{ animationDelay: '0.5s' }} />
+                <div className={`vc-pulse-ring vc-pulse-ring-1 ${voice.listening || isAiProcessing ? 'active' : ''}`} />
+                <div className={`vc-pulse-ring vc-pulse-ring-2 ${voice.listening || isAiProcessing ? 'active' : ''}`} style={{ animationDelay: '0.5s' }} />
                 <button
-                  className={`vc-mic-orb ${voice.listening ? 'on' : ''} ${!voice.supported ? 'disabled' : ''}`}
-                  onClick={voice.toggle} disabled={!voice.supported}
+                  className={`vc-mic-orb ${voice.listening ? 'on' : ''} ${isAiProcessing ? 'ai-thinking' : ''} ${!voice.supported ? 'disabled' : ''}`}
+                  onClick={voice.toggle} disabled={!voice.supported || isAiProcessing}
                 >
                   <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1", fontSize: '3rem' }}>
-                    {voice.listening ? 'mic_off' : 'mic'}
+                    {isAiProcessing ? 'auto_awesome' : (voice.listening ? 'mic_off' : 'mic')}
                   </span>
                 </button>
               </div>
 
               {/* Transcript card */}
               <div className="vc-transcript-card">
-                <p className="vc-transcript-text">
-                  {voice.listening
-                    ? (voice.transcript
-                        ? <>"<span className="vc-transcript-highlight">{voice.transcript}</span>"</>
-                        : <span className="vc-transcript-muted">{t('listening')}</span>)
-                    : heard
-                      ? <>"<span className="vc-transcript-highlight">{heard}</span>"</>
-                      : <span className="vc-transcript-muted">"Add 2 liters of milk to the grocery list…"</span>
-                  }
-                </p>
+                {isAiProcessing ? (
+                  <div className="vc-ai-analyzing-msg">
+                    <span className="material-symbols-outlined vc-sparkle-spin" style={{ color: 'var(--primary)', fontSize: '20px' }}>auto_awesome</span>
+                    <span>AI analyzing speech, filtering banter & extracting items...</span>
+                  </div>
+                ) : (
+                  <p className="vc-transcript-text">
+                    {voice.listening
+                      ? (voice.transcript
+                          ? <>"<span className="vc-transcript-highlight">{voice.transcript}</span>"</>
+                          : <span className="vc-transcript-muted">{t('listening')}</span>)
+                      : heard
+                        ? <>"<span className="vc-transcript-highlight">{heard}</span>"</>
+                        : <span className="vc-transcript-muted">"Add 2 liters of milk and 2 apples..."</span>
+                    }
+                  </p>
+                )}
                 {voice.listening && (
                   <div className="vc-voice-wave">
                     {[10,20,35,15,25].map((h,i) => (
@@ -262,12 +332,30 @@ export default function App() {
                     ))}
                   </div>
                 )}
-                {!voice.listening && (
+                {!voice.listening && !isAiProcessing && (
                   <p className="vc-transcript-hint">
                     {!voice.supported ? '⚠ Use Chrome or Edge for voice' : t('voiceHint')}
                   </p>
                 )}
               </div>
+
+              {/* Last Extracted Items preview */}
+              {!voice.listening && !isAiProcessing && lastParsedCommands.length > 0 && (
+                <div className="vc-extracted-preview">
+                  <div className="vc-extracted-header">
+                    <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>check_circle</span>
+                    <span>Extracted {lastParsedCommands.length} Action{lastParsedCommands.length > 1 ? 's' : ''} ({parseSource === 'gemini' ? 'Gemini AI' : 'Smart Local Parser'}):</span>
+                  </div>
+                  <div className="vc-extracted-tags">
+                    {lastParsedCommands.map((c, i) => (
+                      <span key={i} className="vc-extracted-chip">
+                        <strong>{c.action.toUpperCase()}</strong>: {c.quantity > 1 ? `${c.quantity} ` : ''}{c.unit !== 'item' ? `${c.unit} ` : ''}{c.item || c.searchQuery || c.destination || ''}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {voice.error && (
                 <div className="vc-voice-error">
                   <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>error</span>
@@ -736,20 +824,126 @@ export default function App() {
         {activeNav === 'settings' && (
           <div className="vc-list-page">
             <div className="vc-list-page-header"><h1 className="vc-page-title">Settings</h1></div>
-            <div className="vc-settings-card">
-              <p className="vc-settings-label">{t('voiceLang')}</p>
-              <div className="vc-settings-langs">
-                {LANGS.map(l => (
-                  <button key={l.code} className={`vc-settings-lang-btn ${lang === l.code ? 'active' : ''}`} onClick={() => setLang(l.code)}>
-                    {l.flag} {l.code.split('-')[0].toUpperCase()}
-                  </button>
-                ))}
+
+            {/* AI CONFIGURATION CARD */}
+            <div className="vc-settings-card vc-ai-settings-card">
+              <div className="vc-ai-settings-header">
+                <div>
+                  <div className="vc-ai-title-row">
+                    <span className="material-symbols-outlined" style={{ color: 'var(--primary)', fontSize: '24px' }}>auto_awesome</span>
+                    <h3 className="vc-settings-label" style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600 }}>Gemini AI Smart Voice Engine</h3>
+                    {hasApiKey ? (
+                      <span className="vc-ai-status-badge active">⚡ Active (Gemini 3.7 Flash)</span>
+                    ) : (
+                      <span className="vc-ai-status-badge fallback">⚙️ Enhanced Local Fallback</span>
+                    )}
+                  </div>
+                  <p className="vc-ai-desc">
+                    Uses Gemini AI to intelligently filter background banter/noise (e.g. <em>"hhaahaa bhai tune kya"</em>), fix speech homophones (e.g. <em>"too"</em> ➔ <em>"two"</em>), and extract multiple items in compound sentences.
+                  </p>
+                </div>
               </div>
+
+              <div className="vc-ai-key-section">
+                <label className="vc-ai-input-label" htmlFor="gemini-api-key">Gemini API Key</label>
+                <div className="vc-ai-input-row">
+                  <input
+                    id="gemini-api-key"
+                    type={showKeyField ? 'text' : 'password'}
+                    className="vc-ai-key-input"
+                    placeholder="AIzaSy... (leave blank to use smart local parser)"
+                    value={geminiKeyInput}
+                    onChange={e => setGeminiKeyInput(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="vc-ai-key-toggle"
+                    onClick={() => setShowKeyField(!showKeyField)}
+                    title={showKeyField ? 'Hide API key' : 'Show API key'}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                      {showKeyField ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="vc-ai-key-save-btn"
+                    onClick={() => {
+                      setGeminiApiKey(geminiKeyInput);
+                      setHasApiKey(!!geminiKeyInput.trim());
+                      toast(geminiKeyInput.trim() ? 'Gemini API Key saved! AI voice parser enabled.' : 'API Key cleared. Using local parser.', 'success');
+                    }}
+                  >
+                    Save
+                  </button>
+                  {hasApiKey && (
+                    <button
+                      type="button"
+                      className="vc-ai-key-clear-btn"
+                      onClick={() => {
+                        setGeminiKeyInput('');
+                        setGeminiApiKey('');
+                        setHasApiKey(false);
+                        toast('API key removed. Reverted to local parser.', 'info');
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <p className="vc-ai-key-hint">
+                  Get a free key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Google AI Studio</a>. Keys are stored locally in your browser.
+                </p>
+              </div>
+
+              {/* Sample test buttons */}
+              <div className="vc-ai-test-section">
+                <p className="vc-ai-test-title">🧪 Test Smart Parsing (Simulate Spoken Commands):</p>
+                <div className="vc-ai-test-chips">
+                  <button
+                    className="vc-ai-test-chip"
+                    onClick={() => handleVoice('my doctor told me to eat only 1 cake, and he also told me to have more beetroot about 20')}
+                  >
+                    "my doctor told me to eat only 1 cake, and he also told me to have more beetroot about 20"
+                  </button>
+                  <button
+                    className="vc-ai-test-chip"
+                    onClick={() => handleVoice('add two apple and too water bottle hhaahaa bhai tune kya')}
+                  >
+                    "add two apple and too water bottle hhaahaa bhai tune kya"
+                  </button>
+                  <button
+                    className="vc-ai-test-chip"
+                    onClick={() => handleVoice('bhai do kilo aaloo aur teen packet bread add kar')}
+                  >
+                    "bhai do kilo aaloo aur teen packet bread add kar"
+                  </button>
+                  <button
+                    className="vc-ai-test-chip"
+                    onClick={() => handleVoice('remove milk and add 2 cartons of orange juice')}
+                  >
+                    "remove milk and add 2 cartons of orange juice"
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="vc-settings-card">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>translate</span>
+                <p className="vc-settings-label" style={{ margin: 0, fontWeight: 600 }}>Automatic Universal Language Detection</p>
+                <span className="vc-ai-status-badge active" style={{ marginLeft: 'auto' }}>✨ Auto Active</span>
+              </div>
+              <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.86rem', margin: 0, lineHeight: 1.5 }}>
+                No manual language selection needed! Simply speak in <strong>English, Hindi, Hinglish, Spanish, French, German, Japanese, Arabic, Bengali, Tamil, Telugu</strong>, or any mixed dialect. Gemini 3.7 Flash automatically identifies your language and parses your items seamlessly.
+              </p>
             </div>
             <div className="vc-settings-card">
               <p className="vc-settings-label">{t('voiceRef')}</p>
               <div className="vc-cmd-table">
                 {[
+                  ['Multi-item Add', '"Add 2 apples and 2 water bottles"'],
+                  ['Conversational / Hinglish', '"Bhai 2 kilo aaloo aur bread add kar"'],
                   ['Add item', '"Add milk" / "I need eggs"'],
                   ['With quantity', '"Add 2 bottles of water"'],
                   ['Remove', '"Remove milk" / "Take bread off my list"'],

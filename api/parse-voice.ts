@@ -1,6 +1,3 @@
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
-
 const SYSTEM_PROMPT = `You are the world's most advanced, context-aware AI Voice Shopping Assistant.
 You parse human spoken transcripts into an array of actionable, structured grocery shopping list commands.
 You have real-time access to the user's current shopping list (cart state).
@@ -108,101 +105,81 @@ You MUST output ONLY valid JSON matching this schema:
 }
 If no shopping action is present (e.g. purely unrelated talk), return { "commands": [] }.`;
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+export default async function handler(req: any, res: any) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
 
-  return {
-    plugins: [
-      react(),
-      {
-        name: 'local-api-parse-voice',
-        configureServer(server) {
-          server.middlewares.use('/api/parse-voice', async (req, res) => {
-            if (req.method !== 'POST') {
-              res.statusCode = 405;
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: 'Method Not Allowed' }));
-              return;
-            }
+  let body = req.body;
+  if (typeof body === 'string') {
+    try {
+      body = JSON.parse(body);
+    } catch {
+      body = {};
+    }
+  }
 
-            let body = '';
-            req.on('data', chunk => {
-              body += chunk;
-            });
+  const { transcript, currentItems } = body || {};
+  if (!transcript || typeof transcript !== 'string') {
+    return res.status(400).json({ error: 'Missing transcript' });
+  }
 
-            req.on('end', async () => {
-              try {
-                const parsedBody = JSON.parse(body || '{}');
-                const transcript = parsedBody.transcript;
-                const currentItems = parsedBody.currentItems;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+  const model = process.env.GEMINI_MODEL || process.env.VITE_GEMINI_MODEL || 'gemini-3.7-flash';
+  if (!apiKey) {
+    return res.status(503).json({
+      error: 'GEMINI_API_KEY environment variable not configured on server',
+      fallback: true,
+    });
+  }
 
-                if (!transcript) {
-                  res.statusCode = 400;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify({ error: 'Missing transcript' }));
-                  return;
-                }
+  const cartContext = Array.isArray(currentItems) && currentItems.length > 0
+    ? `Current Shopping List (Cart Items):\n${currentItems.map((i: any) => `- ${i.name} (Quantity: ${i.quantity}, Unit: ${i.unit || 'item'}, Category: ${i.category || 'produce'}, Checked: ${i.checked ? 'Yes' : 'No'})`).join('\n')}`
+    : `Current Shopping List (Cart Items): (empty cart)`;
 
-                const apiKey = env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-                const model = env.GEMINI_MODEL || env.VITE_GEMINI_MODEL || process.env.GEMINI_MODEL || process.env.VITE_GEMINI_MODEL || 'gemini-3.7-flash';
-                if (!apiKey) {
-                  res.statusCode = 503;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify({ error: 'GEMINI_API_KEY not set in server environment', fallback: true }));
-                  return;
-                }
-
-                const cartContext = Array.isArray(currentItems) && currentItems.length > 0
-                  ? `Current Shopping List (Cart Items):\n${currentItems.map((i: any) => `- ${i.name} (Quantity: ${i.quantity}, Unit: ${i.unit || 'item'}, Category: ${i.category || 'produce'}, Checked: ${i.checked ? 'Yes' : 'No'})`).join('\n')}`
-                  : `Current Shopping List (Cart Items): (empty cart)`;
-
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-                const apiRes = await fetch(url, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    contents: [
-                      {
-                        role: 'user',
-                        parts: [
-                          { text: `${SYSTEM_PROMPT}\n\n${cartContext}\n\nUser Spoken Transcript:\n"${transcript}"` }
-                        ]
-                      }
-                    ],
-                    generationConfig: {
-                      responseMimeType: 'application/json',
-                      temperature: 0.1,
-                    }
-                  }),
-                });
-
-                if (!apiRes.ok) {
-                  const errText = await apiRes.text();
-                  res.statusCode = apiRes.status;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify({ error: 'Gemini API error', details: errText }));
-                  return;
-                }
-
-                const data: any = await apiRes.json();
-                const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                const parsed = rawText ? JSON.parse(rawText) : { commands: [] };
-
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({
-                  commands: parsed.commands || [],
-                  source: 'gemini_server',
-                }));
-              } catch (err: any) {
-                res.statusCode = 500;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ error: err.message }));
-              }
-            });
-          });
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: `${SYSTEM_PROMPT}\n\n${cartContext}\n\nUser Spoken Transcript:\n"${transcript}"` }
+            ]
+          }
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.1,
         }
-      }
-    ],
-  };
-});
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      return res.status(response.status).json({
+        error: 'Gemini API Error',
+        details: errText,
+      });
+    }
+
+    const data: any = await response.json();
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const parsed = rawText ? JSON.parse(rawText) : { commands: [] };
+
+    return res.status(200).json({
+      commands: parsed.commands || [],
+      source: 'gemini_server',
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      error: 'Server error parsing voice transcript',
+      message: err?.message || 'Unknown error',
+    });
+  }
+}

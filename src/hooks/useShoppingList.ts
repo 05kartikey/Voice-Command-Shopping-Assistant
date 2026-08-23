@@ -31,7 +31,7 @@ export function useShoppingList() {
   useEffect(() => save(HISTORY_KEY, history), [history]);
   useEffect(() => save(DISMISSED_KEY, dismissed), [dismissed]);
 
-  const addItem = useCallback((name: string, quantity = 1, unit = 'item') => {
+  const addItem = useCallback((name: string, quantity = 1, unit = 'item', category?: string) => {
     const trimmed = capitalize(name.trim());
     if (!trimmed) return null;
 
@@ -39,15 +39,22 @@ export function useShoppingList() {
       const existing = prev.find(i => i.name.toLowerCase() === trimmed.toLowerCase());
       if (existing) {
         return prev.map(i =>
-          i.id === existing.id ? { ...i, quantity: i.quantity + quantity } : i
+          i.id === existing.id
+            ? {
+                ...i,
+                quantity: i.quantity + quantity,
+                category: (i.category === 'other' && category && category !== 'other') ? category : i.category
+              }
+            : i
         );
       }
+      const itemCategory = (category && category !== 'other') ? category.toLowerCase() : categorize(trimmed);
       const newItem: ShoppingItem = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         name: trimmed,
         quantity,
         unit,
-        category: categorize(trimmed),
+        category: itemCategory,
         price: generateMockPrice(trimmed),
         checked: false,
         addedAt: Date.now(),
@@ -132,10 +139,52 @@ export function useShoppingList() {
     });
   }, []);
 
+  const setQuantityByName = useCallback((name: string, quantity: number, unit = 'item', category?: string) => {
+    const trimmed = capitalize(name.trim());
+    if (!trimmed) return;
+
+    setItems(prev => {
+      const existing = prev.find(
+        i => i.name.toLowerCase() === trimmed.toLowerCase() ||
+             i.name.toLowerCase().includes(trimmed.toLowerCase()) ||
+             trimmed.toLowerCase().includes(i.name.toLowerCase())
+      );
+
+      if (existing) {
+        if (quantity <= 0) {
+          return prev.filter(i => i.id !== existing.id);
+        }
+        return prev.map(i => i.id === existing.id ? {
+          ...i,
+          quantity,
+          unit: unit || i.unit,
+          category: (category && category !== 'other') ? category.toLowerCase() : (i.category === 'other' ? categorize(trimmed) : i.category)
+        } : i);
+      }
+
+      if (quantity > 0) {
+        const itemCategory = (category && category !== 'other') ? category.toLowerCase() : categorize(trimmed);
+        const newItem: ShoppingItem = {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          name: trimmed,
+          quantity,
+          unit,
+          category: itemCategory,
+          price: generateMockPrice(trimmed),
+          checked: false,
+          addedAt: Date.now(),
+        };
+        return [...prev, newItem];
+      }
+
+      return prev;
+    });
+  }, []);
+
   return { 
     items, history, dismissed, 
     addItem, removeItem, toggleCheck, checkByName, uncheckByName,
-    clearList, clearChecked, updateQuantity, adjustQuantityByName,
+    clearList, clearChecked, updateQuantity, adjustQuantityByName, setQuantityByName,
     dismissSuggestion, clearDismissed, clearHistory, removeFromHistory 
   };
 }

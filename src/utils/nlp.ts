@@ -1,11 +1,17 @@
-interface ParsedCommand {
-  action: 'add' | 'remove' | 'check' | 'clear' | 'search' | 'unknown' | 'uncheck' | 'increase' | 'decrease' | 'navigate' | 'clear_checked' | 'total';
-  item: string;
-  quantity: number;
-  unit: string;
-  searchQuery?: string;
-  maxPrice?: number;
-  destination?: string;
+import type { ParsedCommand } from '../types';
+export type { ParsedCommand };
+
+export function normalizeVoiceText(raw: string): string {
+  let t = raw.toLowerCase().trim();
+  // Strip trailing laughter/filler like haha, hahaa, lol
+  t = t.replace(/\b(h+a+h+a+[a-z]*|l+o+l+|l+m+a+o+|u+m+m*|u+h+h*)\b/gi, '');
+  // Normalize homophones before number/units/items:
+  // "too" -> "two"
+  t = t.replace(/\btoo\b/gi, 'two');
+  t = t.replace(/\bto\s+(?=\d+|one|two|three|four|five|six|seven|eight|nine|ten|bottle|kilo|kg|packet|pack|can|liter|litre|dozen|[a-z]+)/gi, 'two ');
+  t = t.replace(/\bfor\s+(?=\d+|bottle|kilo|kg|packet|pack|can|liter|litre|dozen|apples|bananas|eggs|items|[a-z]+)/gi, 'four ');
+  t = t.replace(/\s+/g, ' ').trim();
+  return t;
 }
 
 const UNITS_LIST = [
@@ -301,22 +307,36 @@ function extractMaxPrice(text: string): { textWithoutPrice: string, maxPrice?: n
   return { textWithoutPrice: text };
 }
 
-export function parseCommand(transcript: string): ParsedCommand {
-  const text = transcript.trim().toLowerCase().replace(/[.,!?]+$/, '');
+export function parseCommands(transcript: string): ParsedCommand[] {
+  const normalized = normalizeVoiceText(transcript);
+  const text = normalized.replace(/[.,!?]+$/, '').trim();
+  if (!text) return [];
+
+  // Check for compound command clauses, e.g., "remove milk and add 2 apples"
+  const clauseRegex = /\s+(?:and then|also|and)\s+(?=(?:add|remove|delete|check|uncheck|clear|find|search|buy|get|put|grab|need)\b)/i;
+  if (clauseRegex.test(text)) {
+    const clauses = text.split(clauseRegex);
+    const results: ParsedCommand[] = [];
+    for (const clause of clauses) {
+      const parsed = parseCommands(clause);
+      results.push(...parsed);
+    }
+    if (results.length > 0) return results;
+  }
 
   // 1. Clear All
   if (CLEAR_TRIGGERS.some(t => text === t || text.startsWith(t))) {
-    return { action: 'clear', item: '', quantity: 1, unit: 'item' };
+    return [{ action: 'clear', item: '', quantity: 1, unit: 'item' }];
   }
 
   // 1b. Clear Checked
   if (CLEAR_CHECKED_TRIGGERS.some(t => text === t || text.startsWith(t))) {
-    return { action: 'clear_checked', item: '', quantity: 1, unit: 'item' };
+    return [{ action: 'clear_checked', item: '', quantity: 1, unit: 'item' }];
   }
 
   // 1c. Total
   if (TOTAL_TRIGGERS.some(t => text === t || text.startsWith(t))) {
-    return { action: 'total', item: '', quantity: 1, unit: 'item' };
+    return [{ action: 'total', item: '', quantity: 1, unit: 'item' }];
   }
 
   // 2. Check off
@@ -324,7 +344,7 @@ export function parseCommand(transcript: string): ParsedCommand {
   if (checkRaw !== null) {
     const cleaned = stripListSuffix(checkRaw);
     const { item } = extractQtyUnit(cleaned);
-    return { action: 'check', item, quantity: 1, unit: 'item' };
+    return [{ action: 'check', item, quantity: 1, unit: 'item' }];
   }
 
   // 2b. Uncheck
@@ -332,7 +352,7 @@ export function parseCommand(transcript: string): ParsedCommand {
   if (uncheckRaw !== null) {
     const cleaned = stripListSuffix(uncheckRaw);
     const { item } = extractQtyUnit(cleaned);
-    return { action: 'uncheck', item, quantity: 1, unit: 'item' };
+    return [{ action: 'uncheck', item, quantity: 1, unit: 'item' }];
   }
 
   // 3. Remove
@@ -340,7 +360,7 @@ export function parseCommand(transcript: string): ParsedCommand {
   if (removeRaw !== null) {
     const cleaned = stripListSuffix(removeRaw);
     const { item } = extractQtyUnit(cleaned);
-    return { action: 'remove', item, quantity: 1, unit: 'item' };
+    return [{ action: 'remove', item, quantity: 1, unit: 'item' }];
   }
 
   // 3b. Increase
@@ -348,7 +368,7 @@ export function parseCommand(transcript: string): ParsedCommand {
   if (increaseRaw !== null) {
     const cleaned = stripListSuffix(increaseRaw);
     const { item, quantity } = extractQtyUnit(cleaned);
-    return { action: 'increase', item, quantity, unit: 'item' };
+    return [{ action: 'increase', item, quantity, unit: 'item' }];
   }
 
   // 3c. Decrease
@@ -356,46 +376,71 @@ export function parseCommand(transcript: string): ParsedCommand {
   if (decreaseRaw !== null) {
     const cleaned = stripListSuffix(decreaseRaw);
     const { item, quantity } = extractQtyUnit(cleaned);
-    return { action: 'decrease', item, quantity, unit: 'item' };
+    return [{ action: 'decrease', item, quantity, unit: 'item' }];
   }
 
   // 3d. Navigate
   const navigateRaw = matchesTrigger(text, NAVIGATE_TRIGGERS);
   if (navigateRaw !== null) {
-    return { action: 'navigate', item: '', quantity: 1, unit: 'item', destination: navigateRaw.trim() };
+    return [{ action: 'navigate', item: '', quantity: 1, unit: 'item', destination: navigateRaw.trim() }];
   }
-
 
   // 4. Search
   const searchRaw = matchesTrigger(text, SEARCH_TRIGGERS);
   if (searchRaw !== null) {
     const rawQuery = stripListSuffix(searchRaw);
     const { textWithoutPrice, maxPrice } = extractMaxPrice(rawQuery);
-    return { action: 'search', item: '', quantity: 1, unit: 'item', searchQuery: textWithoutPrice, maxPrice };
+    return [{ action: 'search', item: '', quantity: 1, unit: 'item', searchQuery: textWithoutPrice, maxPrice }];
   }
 
   // 5. Add — explicit trigger
   const addRaw = matchesTrigger(text, ADD_TRIGGERS);
   if (addRaw !== null) {
     const cleaned = stripListSuffix(addRaw);
-    const { quantity, unit, item } = extractQtyUnit(cleaned);
-    if (item) return { action: 'add', item, quantity, unit };
+    return splitAndExtractAddItems(cleaned);
   }
 
   // 6. "X to my list" / "X to the cart" / "X a la lista" pattern
   const toListMatch = text.match(/^(.+?)\s+(?:to|on|onto|a|dans|auf)\s+(?:my|the|our|la|ma|meine|der)?\s*(?:list|cart|basket|lista|liste)$/i);
   if (toListMatch) {
-    const { quantity, unit, item } = extractQtyUnit(toListMatch[1].trim());
-    if (item) return { action: 'add', item, quantity, unit };
+    return splitAndExtractAddItems(toListMatch[1].trim());
   }
 
-  // 7. Fallback — treat whole thing as an add
-  const { quantity, unit, item } = extractQtyUnit(text);
-  if (item && item.length >= 1) {
-    return { action: 'add', item, quantity, unit };
+  // 7. Fallback — treat whole thing as an add or multi-item add
+  const fallbackItems = splitAndExtractAddItems(text);
+  if (fallbackItems.length > 0) {
+    return fallbackItems;
   }
 
-  return { action: 'unknown', item: '', quantity: 1, unit: 'item' };
+  return [{ action: 'unknown', item: '', quantity: 1, unit: 'item' }];
+}
+
+function splitAndExtractAddItems(text: string): ParsedCommand[] {
+  // Split multiple items on delimiters: 'and', 'aur', ',', '&', '+', 'with', 'along with'
+  const multiSplitRegex = /\s*(?:,\s*and\s*|,\s*aur\s*|,\s*|\s+and\s+|\s+aur\s+|\s+plus\s+|\s+along with\s+|\s+with\s+|\s*&\s*|\s*\+\s*)\s*/i;
+  const parts = text.split(multiSplitRegex).map(p => p.trim()).filter(Boolean);
+
+  const commands: ParsedCommand[] = [];
+  for (const part of parts) {
+    const { quantity, unit, item } = extractQtyUnit(part);
+    if (item && item.length >= 1) {
+      commands.push({ action: 'add', item, quantity, unit });
+    }
+  }
+
+  if (commands.length === 0) {
+    const { quantity, unit, item } = extractQtyUnit(text);
+    if (item) {
+      return [{ action: 'add', item, quantity, unit }];
+    }
+  }
+
+  return commands;
+}
+
+export function parseCommand(transcript: string): ParsedCommand {
+  const cmds = parseCommands(transcript);
+  return cmds[0] || { action: 'unknown', item: '', quantity: 1, unit: 'item' };
 }
 
 export function capitalize(str: string): string {

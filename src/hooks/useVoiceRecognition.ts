@@ -46,7 +46,14 @@ export function useVoiceRecognition(language: Language, onResult: (transcript: s
 
     const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new Ctor();
-    recognition.lang = language;
+
+    // Auto-detect language from system/browser or use specified language
+    let targetLang = language;
+    if (!targetLang || targetLang === 'auto') {
+      targetLang = (typeof navigator !== 'undefined' ? (navigator.language || 'en-US') : 'en-US');
+    }
+
+    recognition.lang = targetLang;
     recognition.continuous = false;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;

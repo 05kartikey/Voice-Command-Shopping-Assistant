@@ -1,5 +1,29 @@
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
+import type { ParsedCommand, ShoppingItem } from '../types';
+import { parseCommands as localParseCommands } from './nlp';
+
+export const GEMINI_STORAGE_KEY = 'gemini_api_key';
+
+export function getGeminiApiKey(): string {
+  const savedKey = typeof window !== 'undefined' ? localStorage.getItem(GEMINI_STORAGE_KEY) : null;
+  if (savedKey && savedKey.trim()) {
+    return savedKey.trim();
+  }
+  const envKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (envKey && typeof envKey === 'string' && envKey.trim()) {
+    return envKey.trim();
+  }
+  return '';
+}
+
+export function setGeminiApiKey(key: string): void {
+  if (typeof window !== 'undefined') {
+    if (key.trim()) {
+      localStorage.setItem(GEMINI_STORAGE_KEY, key.trim());
+    } else {
+      localStorage.removeItem(GEMINI_STORAGE_KEY);
+    }
+  }
+}
 
 const SYSTEM_PROMPT = `You are the world's most advanced, context-aware AI Voice Shopping Assistant.
 You parse human spoken transcripts into an array of actionable, structured grocery shopping list commands.
@@ -108,101 +132,102 @@ You MUST output ONLY valid JSON matching this schema:
 }
 If no shopping action is present (e.g. purely unrelated talk), return { "commands": [] }.`;
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+export async function parseVoiceWithGemini(
+  transcript: string,
+  options?: { currentItems?: ShoppingItem[]; customApiKey?: string }
+): Promise<{ commands: ParsedCommand[]; source: 'gemini' | 'local' }> {
+  const customApiKey = options?.customApiKey;
+  const currentItems = options?.currentItems || [];
 
-  return {
-    plugins: [
-      react(),
-      {
-        name: 'local-api-parse-voice',
-        configureServer(server) {
-          server.middlewares.use('/api/parse-voice', async (req, res) => {
-            if (req.method !== 'POST') {
-              res.statusCode = 405;
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: 'Method Not Allowed' }));
-              return;
-            }
+  // 1. First, try the Server Backend (/api/parse-voice)
+  if (!customApiKey) {
+    try {
+      const serverRes = await fetch('/api/parse-voice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript, currentItems }),
+      });
 
-            let body = '';
-            req.on('data', chunk => {
-              body += chunk;
-            });
-
-            req.on('end', async () => {
-              try {
-                const parsedBody = JSON.parse(body || '{}');
-                const transcript = parsedBody.transcript;
-                const currentItems = parsedBody.currentItems;
-
-                if (!transcript) {
-                  res.statusCode = 400;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify({ error: 'Missing transcript' }));
-                  return;
-                }
-
-                const apiKey = env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-                const model = env.GEMINI_MODEL || env.VITE_GEMINI_MODEL || process.env.GEMINI_MODEL || process.env.VITE_GEMINI_MODEL || 'gemini-3.7-flash';
-                if (!apiKey) {
-                  res.statusCode = 503;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify({ error: 'GEMINI_API_KEY not set in server environment', fallback: true }));
-                  return;
-                }
-
-                const cartContext = Array.isArray(currentItems) && currentItems.length > 0
-                  ? `Current Shopping List (Cart Items):\n${currentItems.map((i: any) => `- ${i.name} (Quantity: ${i.quantity}, Unit: ${i.unit || 'item'}, Category: ${i.category || 'produce'}, Checked: ${i.checked ? 'Yes' : 'No'})`).join('\n')}`
-                  : `Current Shopping List (Cart Items): (empty cart)`;
-
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-                const apiRes = await fetch(url, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    contents: [
-                      {
-                        role: 'user',
-                        parts: [
-                          { text: `${SYSTEM_PROMPT}\n\n${cartContext}\n\nUser Spoken Transcript:\n"${transcript}"` }
-                        ]
-                      }
-                    ],
-                    generationConfig: {
-                      responseMimeType: 'application/json',
-                      temperature: 0.1,
-                    }
-                  }),
-                });
-
-                if (!apiRes.ok) {
-                  const errText = await apiRes.text();
-                  res.statusCode = apiRes.status;
-                  res.setHeader('Content-Type', 'application/json');
-                  res.end(JSON.stringify({ error: 'Gemini API error', details: errText }));
-                  return;
-                }
-
-                const data: any = await apiRes.json();
-                const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                const parsed = rawText ? JSON.parse(rawText) : { commands: [] };
-
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({
-                  commands: parsed.commands || [],
-                  source: 'gemini_server',
-                }));
-              } catch (err: any) {
-                res.statusCode = 500;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ error: err.message }));
-              }
-            });
-          });
+      if (serverRes.ok) {
+        const data = await serverRes.json();
+        if (Array.isArray(data?.commands) && data.commands.length > 0) {
+          const validated: ParsedCommand[] = data.commands.map((c: Partial<ParsedCommand>) => ({
+            action: c.action || 'add',
+            item: typeof c.item === 'string' ? c.item.trim() : '',
+            quantity: typeof c.quantity === 'number' && !isNaN(c.quantity) ? c.quantity : 1,
+            unit: typeof c.unit === 'string' ? c.unit.toLowerCase() : 'item',
+            category: typeof c.category === 'string' ? c.category.toLowerCase() : undefined,
+            searchQuery: c.searchQuery,
+            maxPrice: c.maxPrice,
+            destination: c.destination,
+          }));
+          return { commands: validated, source: 'gemini' };
         }
       }
-    ],
+    } catch (err) {
+      console.warn('Server API endpoint not reachable, trying client fallback:', err);
+    }
+  }
+
+  // 2. Direct client-side API call (if customApiKey or client key is provided)
+  const clientKey = customApiKey || getGeminiApiKey();
+  const model = import.meta.env.VITE_GEMINI_MODEL || 'gemini-3.7-flash';
+  if (clientKey) {
+    try {
+      const cartContext = currentItems.length > 0
+        ? `Current Shopping List (Cart Items):\n${currentItems.map(i => `- ${i.name} (Quantity: ${i.quantity}, Unit: ${i.unit || 'item'}, Category: ${i.category || 'produce'}, Checked: ${i.checked ? 'Yes' : 'No'})`).join('\n')}`
+        : `Current Shopping List (Cart Items): (empty cart)`;
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${clientKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { text: `${SYSTEM_PROMPT}\n\n${cartContext}\n\nUser Spoken Transcript:\n"${transcript}"` }
+              ]
+            }
+          ],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            temperature: 0.1,
+          }
+        }),
+      });
+
+      if (response.ok) {
+        const data: any = await response.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (rawText) {
+          const parsed = JSON.parse(rawText);
+          if (Array.isArray(parsed?.commands) && parsed.commands.length > 0) {
+            const validated: ParsedCommand[] = parsed.commands.map((c: Partial<ParsedCommand>) => ({
+              action: c.action || 'add',
+              item: typeof c.item === 'string' ? c.item.trim() : '',
+              quantity: typeof c.quantity === 'number' && !isNaN(c.quantity) ? c.quantity : 1,
+              unit: typeof c.unit === 'string' ? c.unit.toLowerCase() : 'item',
+              category: typeof c.category === 'string' ? c.category.toLowerCase() : undefined,
+              searchQuery: c.searchQuery,
+              maxPrice: c.maxPrice,
+              destination: c.destination,
+            }));
+            return { commands: validated, source: 'gemini' };
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Direct client Gemini API error:', err);
+    }
+  }
+
+  // 3. Fallback to Enhanced Local Multi-Item NLP Parser
+  return {
+    commands: localParseCommands(transcript),
+    source: 'local',
   };
-});
+}
