@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import './i18n';
 import type { ParsedCommand } from './types';
-import { parseVoiceWithGemini, getGeminiApiKey, setGeminiApiKey } from './utils/aiParser';
+import { parseVoiceWithGemini } from './utils/aiParser';
 import { parseCommands } from './utils/nlp';
 import { generateSuggestions, getSubstitutes } from './utils/suggestions';
 import { useVoiceRecognition } from './hooks/useVoiceRecognition';
@@ -33,9 +33,6 @@ export default function App() {
   const [maxPriceFilter, setMaxPriceFilter] = useState<number | null>(null);
 
   // AI Voice State
-  const [geminiKeyInput, setGeminiKeyInput] = useState(() => getGeminiApiKey());
-  const [hasApiKey, setHasApiKey] = useState(() => !!getGeminiApiKey());
-  const [showKeyField, setShowKeyField] = useState(false);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   const [lastParsedCommands, setLastParsedCommands] = useState<ParsedCommand[]>([]);
   const [parseSource, setParseSource] = useState<'gemini' | 'local' | null>(null);
@@ -296,14 +293,14 @@ export default function App() {
               <div className="vc-voice-mode-tag-wrap">
                 <button
                   type="button"
-                  className={`vc-voice-mode-tag ${hasApiKey || parseSource === 'gemini' ? 'vc-voice-mode-tag--ai' : 'vc-voice-mode-tag--local'}`}
+                  className="vc-voice-mode-tag vc-voice-mode-tag--ai"
                   onClick={() => setActiveNav('settings')}
-                  title="Click to configure Gemini AI in Settings"
+                  title="Google Gemini 3.7 Flash Cloud Engine is active"
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
-                    {hasApiKey || parseSource === 'gemini' ? 'auto_awesome' : 'offline_bolt'}
+                    auto_awesome
                   </span>
-                  <span>{hasApiKey || parseSource === 'gemini' ? 'Gemini 3.7 Flash AI Active' : 'Local Multi-Item Parser'}</span>
+                  <span>Gemini 3.7 Flash AI Active</span>
                   <span className="vc-voice-mode-arrow material-symbols-outlined" style={{ fontSize: '14px' }}>tune</span>
                 </button>
               </div>
@@ -847,69 +844,13 @@ export default function App() {
                 <div>
                   <div className="vc-ai-title-row">
                     <span className="material-symbols-outlined" style={{ color: 'var(--primary)', fontSize: '24px' }}>auto_awesome</span>
-                    <h3 className="vc-settings-label" style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600 }}>Gemini AI Smart Voice Engine</h3>
-                    {hasApiKey ? (
-                      <span className="vc-ai-status-badge active">⚡ Active (Gemini 3.7 Flash)</span>
-                    ) : (
-                      <span className="vc-ai-status-badge fallback">⚙️ Enhanced Local Fallback</span>
-                    )}
+                    <h3 className="vc-settings-label" style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600 }}>Google Gemini 3.7 Flash Cloud Engine</h3>
+                    <span className="vc-ai-status-badge active">⚡ Connected (Server-Side)</span>
                   </div>
                   <p className="vc-ai-desc">
-                    Uses Gemini AI to intelligently filter background banter/noise (e.g. <em>"hhaahaa bhai tune kya"</em>), fix speech homophones (e.g. <em>"too"</em> ➔ <em>"two"</em>), and extract multiple items in compound sentences.
+                    Voice processing is securely managed by our serverless Google Gemini 3.7 Flash backend. It intelligently filters background noise & banter, corrects phonetic homophones, understands multi-item compound commands, and organizes your cart into 10 supermarket aisles.
                   </p>
                 </div>
-              </div>
-
-              <div className="vc-ai-key-section">
-                <label className="vc-ai-input-label" htmlFor="gemini-api-key">Gemini API Key</label>
-                <div className="vc-ai-input-row">
-                  <input
-                    id="gemini-api-key"
-                    type={showKeyField ? 'text' : 'password'}
-                    className="vc-ai-key-input"
-                    placeholder="AIzaSy... (leave blank to use smart local parser)"
-                    value={geminiKeyInput}
-                    onChange={e => setGeminiKeyInput(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="vc-ai-key-toggle"
-                    onClick={() => setShowKeyField(!showKeyField)}
-                    title={showKeyField ? 'Hide API key' : 'Show API key'}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                      {showKeyField ? 'visibility_off' : 'visibility'}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className="vc-ai-key-save-btn"
-                    onClick={() => {
-                      setGeminiApiKey(geminiKeyInput);
-                      setHasApiKey(!!geminiKeyInput.trim());
-                      toast(geminiKeyInput.trim() ? 'Gemini API Key saved! AI voice parser enabled.' : 'API Key cleared. Using local parser.', 'success');
-                    }}
-                  >
-                    Save
-                  </button>
-                  {hasApiKey && (
-                    <button
-                      type="button"
-                      className="vc-ai-key-clear-btn"
-                      onClick={() => {
-                        setGeminiKeyInput('');
-                        setGeminiApiKey('');
-                        setHasApiKey(false);
-                        toast('API key removed. Reverted to local parser.', 'info');
-                      }}
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-                <p className="vc-ai-key-hint">
-                  Get a free key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Google AI Studio</a>. Keys are stored locally in your browser.
-                </p>
               </div>
 
               {/* Sample test buttons */}

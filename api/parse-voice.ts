@@ -146,8 +146,8 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: 'Missing transcript', receivedBody: body });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || body?.clientApiKey || (req.headers['x-gemini-key'] as string);
-  const primaryModel = process.env.GEMINI_MODEL || process.env.VITE_GEMINI_MODEL || 'gemini-3.6-flash';
+  const apiKey = process.env.GEMINI_API_KEY;
+  const primaryModel = process.env.GEMINI_MODEL || 'gemini-3.7-flash';
   if (!apiKey) {
     return res.status(503).json({
       error: 'GEMINI_API_KEY environment variable not configured on server',
