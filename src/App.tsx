@@ -10,6 +10,7 @@ import { useShoppingList } from './hooks/useShoppingList';
 import ToastContainer from './components/Toast';
 import { toast } from './utils/toast';
 import { CATEGORY_ICONS, getItemEmoji } from './utils/categories';
+import { searchStoreCatalog } from './utils/catalog';
 import './App.css';
 
 const AISLE_ICONS: Record<string, string> = {
@@ -30,6 +31,7 @@ export default function App() {
   const [newItemQty, setNewItemQty] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
+  const [searchCategory, setSearchCategory] = useState('All');
   const [maxPriceFilter, setMaxPriceFilter] = useState<number | null>(null);
 
   // AI Voice State
@@ -188,7 +190,9 @@ export default function App() {
   };
 
   const listFiltered = items.filter(i => matchSearch(search, i.name, i.category) && (maxPriceFilter === null || (i.price && i.price <= maxPriceFilter)));
-  const searchFiltered = items.filter(i => matchSearch(searchFilter, i.name, i.category) && (maxPriceFilter === null || (i.price && i.price <= maxPriceFilter)));
+  const catalogResults = useMemo(() => {
+    return searchStoreCatalog(searchFilter, searchCategory === 'All' ? '' : searchCategory, maxPriceFilter);
+  }, [searchFilter, searchCategory, maxPriceFilter]);
 
   const grouped = listFiltered.reduce<Record<string, typeof items>>((acc, item) => {
     (acc[item.category] = acc[item.category] || []).push(item);
@@ -693,7 +697,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ══ SEARCH (Product Search Results) ══ */}
+        {/* ══ SEARCH (Product Search & Supermarket Catalog) ══ */}
         {activeNav === 'search' && (
           <div className="vc-search-page">
             <div className="vc-search-bar-hero">
@@ -705,7 +709,7 @@ export default function App() {
                   className="vc-search-big-input"
                   value={searchFilter}
                   onChange={e => setSearchFilter(e.target.value)}
-                  placeholder="Search products… or say 'Find organic apples'"
+                  placeholder="Search products… or say 'Find organic apples under $5'"
                   autoFocus
                 />
                 {searchFilter && <button onClick={() => setSearchFilter('')}><span className="material-symbols-outlined">close</span></button>}
@@ -716,19 +720,19 @@ export default function App() {
               {/* Filters sidebar */}
               <aside className="vc-filters-sidebar">
                 <h3 className="vc-filters-title">
-                  <span className="material-symbols-outlined">tune</span> Voice Filters
+                  <span className="material-symbols-outlined">tune</span> Supermarket Aisles
                 </h3>
-                <p className="vc-filters-hint">"Filter by…"</p>
+                <p className="vc-filters-hint">Browse by department</p>
                 <div className="vc-filter-list">
-                  {['All', 'Produce', 'Dairy', 'Bakery', 'Meat', 'Pantry', 'Beverages', 'Snacks', 'Household'].map(f => (
+                  {['All', 'Produce', 'Dairy', 'Bakery', 'Meat', 'Pantry', 'Beverages', 'Snacks', 'Frozen', 'Household', 'Personal'].map(f => (
                     <button
                       key={f}
-                      className={`vc-filter-btn ${(f === 'All' && !searchFilter) || searchFilter.toLowerCase() === f.toLowerCase() ? 'active' : ''}`}
-                      onClick={() => setSearchFilter(f === 'All' ? '' : f.toLowerCase())}
+                      className={`vc-filter-btn ${searchCategory.toLowerCase() === f.toLowerCase() ? 'active' : ''}`}
+                      onClick={() => setSearchCategory(f)}
                     >
                       <span>{f}</span>
                       <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
-                        {(f === 'All' && !searchFilter) || searchFilter.toLowerCase() === f.toLowerCase() ? 'close' : 'add'}
+                        {searchCategory.toLowerCase() === f.toLowerCase() ? 'check' : 'chevron_right'}
                       </span>
                     </button>
                   ))}
@@ -738,51 +742,70 @@ export default function App() {
               {/* Results grid */}
               <div className="vc-results-area">
                 <div className="vc-results-header">
-                  <h1 className="vc-results-title">Results</h1>
-                  <span className="vc-results-count">{searchFiltered.length} items found</span>
+                  <h1 className="vc-results-title">
+                    {searchCategory === 'All' ? 'Supermarket Catalog' : `${searchCategory} Aisle`}
+                    {maxPriceFilter && <span style={{ fontSize: '0.9rem', color: 'var(--primary)', marginLeft: 8 }}>(Under ${maxPriceFilter.toFixed(2)})</span>}
+                  </h1>
+                  <span className="vc-results-count">{catalogResults.length} products available</span>
                 </div>
 
-                {items.length === 0 ? (
-                  <div className="vc-empty-full">
-                    <span className="material-symbols-outlined" style={{ fontSize: '3rem', color: 'var(--outline)' }}>search</span>
-                    <p className="vc-empty-title">{t('emptyList')}</p>
-                    <p className="vc-empty-sub">Add items first, then search through them</p>
-                  </div>
-                ) : searchFiltered.length === 0 ? (
+                {catalogResults.length === 0 ? (
                   <div className="vc-empty-full">
                     <span className="material-symbols-outlined" style={{ fontSize: '3rem', color: 'var(--outline)' }}>search_off</span>
-                    <p className="vc-empty-title">No results for "{searchFilter}"</p>
+                    <p className="vc-empty-title">No catalog items matching "{searchFilter}"</p>
                     <button className="vc-add-search-result-btn" onClick={() => { addItem(searchFilter); toast(`Added "${searchFilter}"`, 'success'); setSearchFilter(''); setActiveNav('list'); }}>
-                      <span className="material-symbols-outlined">add_shopping_cart</span> Add "{searchFilter}" to list
+                      <span className="material-symbols-outlined">add_shopping_cart</span> Add custom item "{searchFilter}" to cart
                     </button>
                   </div>
                 ) : (
                   <div className="vc-results-grid">
-                    {searchFiltered.map(item => (
-                      <div key={item.id} className="vc-result-card">
-                        <div className="vc-result-card-img">
-                          <span style={{ fontSize: '3.5rem' }}>{getItemEmoji(item.name, item.category)}</span>
-                          <span className="vc-result-badge">
-                            <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>eco</span> {item.category}
-                          </span>
-                        </div>
-                        <div className="vc-result-card-body">
-                          <p className="vc-result-brand">{item.category}</p>
-                          <h3 className="vc-result-name">{item.name}</h3>
-                          <p className="vc-result-detail">{item.quantity} {item.unit !== 'item' ? item.unit : 'item'}</p>
-                          <div className="vc-result-card-footer">
-                            <div className="vc-result-qty-ctrl">
-                              <button onClick={() => updateQuantity(item.id, item.quantity - 1)}><span className="material-symbols-outlined">remove</span></button>
-                              <span>{item.quantity}</span>
-                              <button onClick={() => updateQuantity(item.id, item.quantity + 1)}><span className="material-symbols-outlined">add</span></button>
+                    {catalogResults.map(product => {
+                      const inCart = items.find(i => i.name.toLowerCase() === product.name.toLowerCase());
+                      return (
+                        <div key={product.id} className={`vc-result-card ${inCart ? 'vc-result-card--in-cart' : ''}`}>
+                          <div className="vc-result-card-img">
+                            <span style={{ fontSize: '3.5rem' }}>{getItemEmoji(product.name, product.category)}</span>
+                            <span className="vc-result-badge">
+                              <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>eco</span> {product.category}
+                            </span>
+                            {inCart && (
+                              <span className="vc-in-cart-pill">
+                                <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>check</span> In Cart
+                              </span>
+                            )}
+                          </div>
+                          <div className="vc-result-card-body">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <p className="vc-result-brand">{product.category.toUpperCase()}</p>
+                              <span className="vc-result-price-tag">${product.price.toFixed(2)}</span>
                             </div>
-                            <button className={`vc-result-add-btn ${item.checked ? 'checked' : ''}`} onClick={() => toggleCheck(item.id)}>
-                              <span className="material-symbols-outlined">{item.checked ? 'check_circle' : 'add_shopping_cart'}</span>
-                            </button>
+                            <h3 className="vc-result-name">{product.name}</h3>
+                            <p className="vc-result-detail">{product.description}</p>
+                            <div className="vc-result-card-footer">
+                              {inCart ? (
+                                <div className="vc-result-qty-ctrl">
+                                  <button onClick={() => updateQuantity(inCart.id, inCart.quantity - 1)}><span className="material-symbols-outlined">remove</span></button>
+                                  <span>{inCart.quantity} {inCart.unit !== 'item' ? inCart.unit : ''}</span>
+                                  <button onClick={() => updateQuantity(inCart.id, inCart.quantity + 1)}><span className="material-symbols-outlined">add</span></button>
+                                </div>
+                              ) : (
+                                <button
+                                  className="vc-seasonal-add-btn"
+                                  style={{ marginTop: 0 }}
+                                  onClick={() => {
+                                    addItem(product.name, 1, product.unit, product.category);
+                                    toast(`Added "${product.name}" ($${product.price.toFixed(2)})`, 'success');
+                                  }}
+                                >
+                                  <span className="material-symbols-outlined" style={{ fontSize: '16px', verticalAlign: 'middle', marginRight: 4 }}>add_shopping_cart</span>
+                                  Add to List
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
