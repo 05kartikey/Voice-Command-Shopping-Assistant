@@ -8,7 +8,7 @@ export function getGeminiApiKey(): string {
   if (savedKey && savedKey.trim()) {
     return savedKey.trim();
   }
-  const envKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const envKey = (import.meta as any).env?.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
   if (envKey && typeof envKey === 'string' && envKey.trim()) {
     return envKey.trim();
   }

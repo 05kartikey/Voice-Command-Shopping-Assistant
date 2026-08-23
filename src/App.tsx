@@ -280,14 +280,14 @@ export default function App() {
               <div className="vc-voice-mode-tag-wrap">
                 <button
                   type="button"
-                  className={`vc-voice-mode-tag ${hasApiKey ? 'vc-voice-mode-tag--ai' : 'vc-voice-mode-tag--local'}`}
+                  className={`vc-voice-mode-tag ${hasApiKey || parseSource === 'gemini' ? 'vc-voice-mode-tag--ai' : 'vc-voice-mode-tag--local'}`}
                   onClick={() => setActiveNav('settings')}
                   title="Click to configure Gemini AI in Settings"
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>
-                    {hasApiKey ? 'auto_awesome' : 'offline_bolt'}
+                    {hasApiKey || parseSource === 'gemini' ? 'auto_awesome' : 'offline_bolt'}
                   </span>
-                  <span>{hasApiKey ? 'Gemini 3.7 Flash AI Active' : 'Local Multi-Item Parser'}</span>
+                  <span>{hasApiKey || parseSource === 'gemini' ? 'Gemini 3.7 Flash AI Active' : 'Local Multi-Item Parser'}</span>
                   <span className="vc-voice-mode-arrow material-symbols-outlined" style={{ fontSize: '14px' }}>tune</span>
                 </button>
               </div>

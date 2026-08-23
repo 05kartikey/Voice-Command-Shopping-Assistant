@@ -210,7 +210,9 @@ export default defineConfig(({ mode }) => {
       }
     ],
     define: {
-      'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || ''),
+      'import.meta.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
+      'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || ''),
+      'import.meta.env.GEMINI_MODEL': JSON.stringify(env.GEMINI_MODEL || 'gemini-3.7-flash'),
       'import.meta.env.VITE_GEMINI_MODEL': JSON.stringify(env.GEMINI_MODEL || 'gemini-3.7-flash'),
     },
   };

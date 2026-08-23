@@ -143,7 +143,7 @@ export default async function handler(req: any, res: any) {
   }
 
   const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || body?.clientApiKey || (req.headers['x-gemini-key'] as string);
-  const model = process.env.GEMINI_MODEL || process.env.VITE_GEMINI_MODEL || 'gemini-3.7-flash';
+  const primaryModel = process.env.GEMINI_MODEL || process.env.VITE_GEMINI_MODEL || 'gemini-3.6-flash';
   if (!apiKey) {
     return res.status(503).json({
       error: 'GEMINI_API_KEY environment variable not configured on server',
@@ -155,49 +155,53 @@ export default async function handler(req: any, res: any) {
     ? `Current Shopping List (Cart Items):\n${currentItems.map((i: any) => `- ${i.name} (Quantity: ${i.quantity}, Unit: ${i.unit || 'item'}, Category: ${i.category || 'produce'}, Checked: ${i.checked ? 'Yes' : 'No'})`).join('\n')}`
     : `Current Shopping List (Cart Items): (empty cart)`;
 
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              { text: `${SYSTEM_PROMPT}\n\n${cartContext}\n\nUser Spoken Transcript:\n"${transcript}"` }
-            ]
+  const modelsToTry = [primaryModel, 'gemini-3.6-flash', 'gemini-3.7-flash'].filter((m, i, arr) => arr.indexOf(m) === i);
+
+  let lastError = null;
+  for (const model of modelsToTry) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                { text: `${SYSTEM_PROMPT}\n\n${cartContext}\n\nUser Spoken Transcript:\n"${transcript}"` }
+              ]
+            }
+          ],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            temperature: 0.1,
           }
-        ],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.1,
-        }
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      return res.status(response.status).json({
-        error: 'Gemini API Error',
-        details: errText,
+        }),
       });
+
+      if (response.ok) {
+        const data: any = await response.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const parsed = rawText ? JSON.parse(rawText) : { commands: [] };
+
+        return res.status(200).json({
+          commands: parsed.commands || [],
+          source: 'gemini_server',
+          model,
+        });
+      } else {
+        lastError = await response.text();
+      }
+    } catch (err: any) {
+      lastError = err?.message;
     }
-
-    const data: any = await response.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    const parsed = rawText ? JSON.parse(rawText) : { commands: [] };
-
-    return res.status(200).json({
-      commands: parsed.commands || [],
-      source: 'gemini_server',
-    });
-  } catch (err: any) {
-    return res.status(500).json({
-      error: 'Server error parsing voice transcript',
-      message: err?.message || 'Unknown error',
-    });
   }
+
+  return res.status(500).json({
+    error: 'Gemini API Error across available models',
+    details: lastError,
+  });
 }
