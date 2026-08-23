@@ -115,7 +115,6 @@ GEMINI_MODEL=gemini-3.7-flash
 ```bash
 npm run dev
 ```
-Open [http://localhost:5173](http://localhost:5173) in Chrome or Edge.
 
 ### 4. Build & Lint
 ```bash
