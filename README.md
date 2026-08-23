@@ -15,6 +15,7 @@ A modern, privacy-first, voice-powered grocery shopping assistant. Built with **
 
 ## 📑 Table of Contents
 
+- [🧠 Approach & Architecture (200-Word Overview)](#-approach--architecture-200-word-overview)
 - [✨ Key Features](#-key-features)
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
@@ -26,6 +27,16 @@ A modern, privacy-first, voice-powered grocery shopping assistant. Built with **
 - [🚢 Deployment Guide](#-deployment-guide)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
+
+---
+
+## 🧠 Approach & Architecture (200-Word Overview)
+
+**VocalCart** is engineered as a privacy-centric, dual-tier voice shopping assistant built on React 19, TypeScript, and Vite. Our architecture leverages a hybrid intelligence pipeline: client-side Web Speech API captures real-time microphone audio with zero latency and automatic system language detection, while backend Vercel Serverless Functions proxy requests to Google's Gemini 3.7 Flash LLM with complete active cart context awareness.
+
+This empowers human-grade conversational understanding—seamlessly executing multi-item additions, mid-sentence self-corrections (*"Add 5 apples, wait make it 3"*), quantity overrides (*"Doctor said eat only 1 cake"*), price filtering (*"Find toothpaste under $5"*), and noise filtration across 100+ languages and dialects. For resilience and privacy, a deterministic offline regex NLP fallback parser guarantees full functionality even without network connectivity or API keys.
+
+Smart suggestions are driven by a dual-heuristic engine analyzing historical purchase frequencies (low-stock triggers), calendar-based seasonal harvests, culinary ingredient pairings, and dietary allergen substitutions. State is synchronized reactively via custom hooks into `localStorage`, rendering a 10-department aisle categorization with sub-second feedback, accessible micro-interactions, audio waveforms, and mobile-optimized responsiveness.
 
 ---
 
@@ -119,14 +130,18 @@ A modern, privacy-first, voice-powered grocery shopping assistant. Built with **
 
 ## 🗣️ Voice Command Cheatsheet
 
-| Action | Spoken Example (English) | Recognized Intent |
+| Action | Spoken Example (English / Hinglish / Multilingual) | Recognized Intent |
 | :--- | :--- | :--- |
-| **Add Single Item** | `"Add bananas"`, `"I need butter"` | Adds item to list under auto-detected category |
-| **Add with Quantity** | `"Add 3 bottles of water"`, `"Buy 2 kg of apples"` | Parses quantity `3`, unit `bottles`, name `water` |
+| **Add Single Item** | `"Add bananas"`, `"I need butter"`, `"Ek packet bread daal do"` | Adds item to list under auto-detected category |
+| **Add with Quantity & Unit** | `"Add 3 bottles of olive oil"`, `"Buy 2 kg of apples"` | Parses quantity `3`, packaging unit `bottle`, item `olive oil` |
+| **Contextual Target Qty** | `"Doctor told me to eat only 1 cake and 20 beetroot"` | Sets `cake` to `1` and adds `20 beetroot` under Produce |
+| **Mid-Sentence Self-Correction** | `"Add 5 apples, no wait make it 3"` | Intelligently adds only `3 apples` |
+| **Noise & Banter Filtering** | `"Hey buddy add 2 milk bottles haha bhai kya kar raha hai"` | Cleanly extracts `2 bottles milk` under Dairy |
+| **Item & Price Search Filter** | `"Find organic apples"`, `"Find toothpaste under $5"` | Filters catalog by query `"toothpaste"` and max price `$5.00` |
 | **Remove Item** | `"Remove bread"`, `"Take milk off my list"` | Deletes matching item from list |
 | **Check / Mark Done** | `"Check off eggs"`, `"Mark milk as done"` | Toggles item state to completed |
-| **Search Filter** | `"Find organic apples"`, `"Search for olive oil"` | Switches to Search tab and filters list |
-| **Clear All** | `"Clear the list"`, `"Empty everything"` | Resets the current shopping list |
+| **Voice Navigation** | `"Go to suggestions"`, `"Show history"`, `"Go to settings"` | Switches between app tabs effortlessly |
+| **Clear List** | `"Clear the list"`, `"Empty everything"`, `"Clear purchased"` | Clears cart or removes checked-off items |
 
 ---
 

@@ -82,7 +82,7 @@ You have real-time access to the user's current shopping list (cart state).
    - 'decrease': decrease item quantity by delta
    - 'clear': clear entire list
    - 'clear_checked': remove all checked items
-   - 'search': search catalog (include 'searchQuery', optional 'maxPrice')
+   - 'search': search or filter catalog by keyword, brand, or price (include 'searchQuery', optional 'maxPrice', e.g., "Find organic apples" -> searchQuery: "organic apples"; "Find toothpaste under $5" -> searchQuery: "toothpaste", maxPrice: 5)
    - 'navigate': switch tab (destination: 'list', 'history', 'suggest', 'settings', 'search')
    - 'total': calculate total cost
 
@@ -103,6 +103,11 @@ You MUST output ONLY valid JSON matching this schema:
       "quantity": 20,
       "unit": "item",
       "category": "produce"
+    },
+    {
+      "action": "search",
+      "searchQuery": "toothpaste",
+      "maxPrice": 5
     }
   ]
 }
