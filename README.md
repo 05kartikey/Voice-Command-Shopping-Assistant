@@ -28,6 +28,7 @@ Smart suggestions are driven by a dual-heuristic engine analyzing historical pur
 - **🎙️ Zero-Lag Voice & Conversational NLP:** Handles compound sentences, mid-phrase corrections, background banter, and phonetic homophones (*"to"* ➔ *2*).
 - **🛒 Contextual Cart Understanding:** Overrides or increments existing items based on intent (*"Eat only 1 cake"* vs *"Add 2 more cakes"*).
 - **🏬 10 Supermarket Aisle Departments:** Auto-categorizes into Produce, Dairy, Bakery, Meat, Pantry, Beverages, Snacks, Frozen, Household, and Personal care with rich 3D emoji product visuals.
+- **🛍️ Complete Supermarket Store Catalog:** Browse and search 60+ department products with 1-click cart addition and real-time in-cart quantity controls.
 - **💡 Smart Suggestion Bento Grid:** Low-stock frequency alerts, peak-season produce recommendations, and culinary pairing recipes.
 - **🌱 Inline Dietary Substitutes:** One-tap allergy and dietary swaps (e.g., *Milk* ➔ *Oat Milk*, *Almond Milk*).
 - **🔍 Voice & Price Filtering:** Real-time search by department category and budget constraints (*"Find olive oil under $10"*).
@@ -81,6 +82,7 @@ Voice-Command-Shopping-Assistant/
 │   │   └── index.ts            # TypeScript interfaces (ShoppingItem, ParsedCommand, etc.)
 │   ├── utils/
 │   │   ├── aiParser.ts         # Secure serverless API client dispatcher
+│   │   ├── catalog.ts          # Supermarket store product catalog & search engine
 │   │   ├── categories.ts       # Aisle department mapping & item-specific 3D emojis
 │   │   ├── nlp.ts              # Deterministic offline regex entity/unit parser
 │   │   ├── pricing.ts          # Mock pricing engine
