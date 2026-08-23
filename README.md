@@ -74,11 +74,13 @@ Smart suggestions are driven by a dual-heuristic engine analyzing historical pur
 | Domain | Technology / Library | Description |
 | :--- | :--- | :--- |
 | **Frontend Framework** | [React 19](https://react.dev/) | Component architecture with modern hooks & concurrent rendering |
+| **AI Cloud Engine** | [Google Gemini 3.7 Flash](https://aistudio.google.com/) | Context-aware LLM voice parsing via secure Vercel serverless function |
 | **Language** | [TypeScript 6](https://www.typescriptlang.org/) | Strict type safety and clear domain models |
 | **Build Tool** | [Vite 8](https://vitejs.dev/) | Instant HMR and optimized production bundling |
 | **Speech Engine** | [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) | Native in-browser speech recognition |
-| **Internationalization** | [i18next](https://www.i18next.com/) + [react-i18next](https://react.i18next.com/) | 6-language translation & speech locale syncing |
-| **Icons** | [Lucide React](https://lucide.dev/) + Google Material Symbols | Clean, lightweight icon set |
+| **Backend / Serverless** | [Vercel Edge Functions](https://vercel.com/) | Server-side API route for secure AI key management |
+| **Internationalization** | [i18next](https://www.i18next.com/) + [react-i18next](https://react.i18next.com/) | Universal multilingual detection & speech locale syncing |
+| **Icons** | Google Material Symbols & Rich 3D Grocery Emojis | Item-specific icons across all supermarket categories |
 | **Linter** | [oxlint](https://oxc.rs/) | Blazing fast JavaScript/TypeScript linter |
 | **Styling** | Vanilla CSS3 | Custom responsive design system with CSS tokens & glassmorphism |
 | **Persistence** | Browser `localStorage` | Offline-ready local state management |
@@ -105,10 +107,18 @@ Smart suggestions are driven by a dual-heuristic engine analyzing historical pur
    npm install
    ```
 
-3. **Start the local development server:**
+3. **Configure Environment Variables (Optional for Local AI Testing):**
+   Create a `.env` file in the root directory:
+   ```env
+   GEMINI_API_KEY=your_gemini_api_key_here
+   GEMINI_MODEL=gemini-3.7-flash
+   ```
+
+4. **Start the local development server:**
    ```bash
    npm run dev
    ```
+   Open [http://localhost:5173](http://localhost:5173) in your browser.
    Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 4. **Lint the codebase:**
@@ -184,6 +194,8 @@ This project has been built strictly adhering to ethical open-source and privacy
 
 ```
 Voice-Command-Shopping-Assistant/
+├── api/
+│   └── parse-voice.ts          # Vercel Serverless Function (Gemini 3.7 Flash Engine)
 ├── public/
 │   └── cart.svg                # Brand icon
 ├── src/
@@ -197,20 +209,22 @@ Voice-Command-Shopping-Assistant/
 │   ├── types/
 │   │   └── index.ts             # TypeScript interfaces & types
 │   ├── utils/
-│   │   ├── categories.ts        # Item classification & aisle mappings
-│   │   ├── nlp.ts               # Intent, entity, quantity & unit parser
+│   │   ├── aiParser.ts          # Gemini AI serverless client dispatcher
+│   │   ├── categories.ts        # Item classification, emojis & aisle mappings
+│   │   ├── nlp.ts               # Offline multilingual NLP entity parser
 │   │   ├── pricing.ts           # Deterministic mock pricing engine
 │   │   ├── suggestions.ts       # Pairing, frequency, & seasonal algorithms
 │   │   └── toast.ts             # Decoupled toast event emitter
 │   ├── App.css                  # Custom responsive design system
 │   ├── App.tsx                  # Main application orchestrator & dashboard
 │   └── main.tsx                 # React DOM root entry point
+├── .env.example                 # Example environment configuration
 ├── .gitignore                   # Comprehensive rule set for safe commits
 ├── .oxlintrc.json               # Fast linter configuration
 ├── LICENSE                      # MIT Open Source License
 ├── package.json                 # Project dependencies & scripts
 ├── tsconfig.json                # TypeScript project config
-└── vite.config.ts               # Vite build settings
+└── vite.config.ts               # Vite build settings & local dev proxy
 ```
 
 ---
