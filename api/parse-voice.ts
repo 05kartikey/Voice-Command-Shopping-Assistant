@@ -122,6 +122,19 @@ export default async function handler(req: any, res: any) {
     } catch {
       body = {};
     }
+  } else if (!body) {
+    try {
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) {
+        chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+      }
+      if (chunks.length > 0) {
+        const raw = Buffer.concat(chunks).toString('utf-8');
+        body = JSON.parse(raw);
+      }
+    } catch {
+      body = {};
+    }
   }
 
   const { transcript, currentItems } = body || {};
@@ -129,7 +142,7 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: 'Missing transcript' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || body?.clientApiKey || (req.headers['x-gemini-key'] as string);
   const model = process.env.GEMINI_MODEL || process.env.VITE_GEMINI_MODEL || 'gemini-3.7-flash';
   if (!apiKey) {
     return res.status(503).json({

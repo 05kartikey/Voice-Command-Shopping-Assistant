@@ -87,7 +87,11 @@ function cleanItem(raw: string): string {
 }
 
 function extractQtyUnit(text: string): { quantity: number; unit: string; item: string } {
-  const t = text.trim();
+  let t = text.trim();
+
+  // Strip leading indirect objects, pronouns, and request filler before number/unit matching
+  // E.g. "me two apples", "us 3 bottles of water", "for me 2 oranges", "some apples"
+  t = t.replace(/^(?:(?:please|can you|could you|kindly)\s+)?(?:(?:for\s+)?(?:me|us|him|her|them)\s+)?(?:some\s+|a\s+|an\s+|the\s+)?/i, '').trim();
 
   // Build regex patterns
   const unitsPattern = UNITS_LIST.join('|');

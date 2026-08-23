@@ -143,15 +143,19 @@ export async function parseVoiceWithGemini(
 ): Promise<{ commands: ParsedCommand[]; source: 'gemini' | 'local' }> {
   const customApiKey = options?.customApiKey;
   const currentItems = options?.currentItems || [];
+  const clientKey = customApiKey || getGeminiApiKey();
 
   // 1. First, try the Server Backend (/api/parse-voice)
-  if (!customApiKey) {
-    try {
-      const serverRes = await fetch('/api/parse-voice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript, currentItems }),
-      });
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (clientKey) {
+      headers['x-gemini-key'] = clientKey;
+    }
+    const serverRes = await fetch('/api/parse-voice', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ transcript, currentItems, clientApiKey: clientKey }),
+    });
 
       if (serverRes.ok) {
         const data = await serverRes.json();
@@ -172,10 +176,8 @@ export async function parseVoiceWithGemini(
     } catch (err) {
       console.warn('Server API endpoint not reachable, trying client fallback:', err);
     }
-  }
 
   // 2. Direct client-side API call (if customApiKey or client key is provided)
-  const clientKey = customApiKey || getGeminiApiKey();
   const model = import.meta.env.VITE_GEMINI_MODEL || 'gemini-3.7-flash';
   if (clientKey) {
     try {
