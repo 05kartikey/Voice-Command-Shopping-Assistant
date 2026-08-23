@@ -30,6 +30,114 @@ export const CATEGORY_ICONS: Record<string, string> = {
   beverages: '🥤', snacks: '🍿', frozen: '🧊', household: '🧹', personal: '💊', other: '🛒',
 };
 
+export const ITEM_EMOJIS: Record<string, string> = {
+  // Produce / Fruits & Veggies
+  tomato: '🍅', tomatoes: '🍅',
+  corn: '🌽', sweetcorn: '🌽',
+  eggplant: '🍆', brinjal: '🍆', aubergine: '🍆',
+  pepper: '🫑', peppers: '🫑', 'bell pepper': '🫑', capsicum: '🫑',
+  apple: '🍎', apples: '🍎',
+  banana: '🍌', bananas: '🍌',
+  orange: '🍊', oranges: '🍊',
+  lemon: '🍋', lemons: '🍋',
+  lime: '🍋‍🟩', limes: '🍋‍🟩',
+  grape: '🍇', grapes: '🍇',
+  strawberry: '🍓', strawberries: '🍓',
+  blueberry: '🫐', blueberries: '🫐',
+  raspberry: '🫐', raspberries: '🫐',
+  watermelon: '🍉',
+  pineapple: '🍍',
+  avocado: '🥑', avocados: '🥑',
+  carrot: '🥕', carrots: '🥕', gajar: '🥕',
+  potato: '🥔', potatoes: '🥔', aaloo: '🥔',
+  onion: '🧅', onions: '🧅', pyaaz: '🧅',
+  garlic: '🧄',
+  ginger: '🫚',
+  cucumber: '🥒', cucumbers: '🥒',
+  broccoli: '🥦',
+  cauliflower: '🥦', gobhi: '🥦',
+  cabbage: '🥬',
+  spinach: '🥬', palak: '🥬', kale: '🥬', lettuce: '🥬',
+  mushroom: '🍄', mushrooms: '🍄',
+  beetroot: '🟣', beet: '🟣', beetroots: '🟣',
+  peas: '🫛', matar: '🫛',
+  okra: '🥬', bhindi: '🥬',
+  mango: '🥭', mangoes: '🥭',
+  peach: '🍑', peaches: '🍑',
+  cherry: '🍒', cherries: '🍒',
+  celery: '🥬', zucchini: '🥒', radish: '🫚',
+  coriander: '🌿', cilantro: '🌿', mint: '🌿', pudina: '🌿',
+
+  // Bakery
+  bread: '🍞', 'sourdough bread': '🍞', sourdough: '🍞', toast: '🍞',
+  bagel: '🥯', bagels: '🥯', bun: '🍞', buns: '🍞',
+  croissant: '🥐',
+  cake: '🍰', cakes: '🍰', brownie: '🍰', pastry: '🍰', pastries: '🍰',
+  cookie: '🍪', cookies: '🍪', biscuit: '🍪', biscuits: '🍪',
+  donut: '🍩', donuts: '🍩',
+  muffin: '🧁', muffins: '🧁',
+  tortilla: '🫓', tortillas: '🫓', pita: '🫓',
+
+  // Dairy & Plant-based
+  milk: '🥛', 'oat milk': '🥛', 'almond milk': '🥛', 'soy milk': '🥛',
+  cheese: '🧀', cheddar: '🧀', mozzarella: '🧀', parmesan: '🧀', paneer: '🧀',
+  butter: '🧈', ghee: '🧈',
+  yogurt: '🍨', curd: '🍨', cream: '🍨',
+
+  // Meat & Seafood
+  egg: '🥚', eggs: '🥚',
+  chicken: '🍗', turkey: '🍗',
+  steak: '🥩', beef: '🥩', meat: '🥩', pork: '🥩', lamb: '🥩', mutton: '🥩',
+  fish: '🐟', salmon: '🐟', tuna: '🐟',
+  shrimp: '🦐', prawns: '🦐',
+  bacon: '🥓',
+  sausage: '🌭', sausages: '🌭', ham: '🍖',
+
+  // Pantry
+  oil: '🫒', 'olive oil': '🫒', vinegar: '🍾',
+  rice: '🍚',
+  pasta: '🍝', noodles: '🍜',
+  flour: '🌾', atta: '🌾', oats: '🥣', cereal: '🥣',
+  honey: '🍯', jam: '🍓',
+  peanut: '🥜', 'peanut butter': '🥜',
+  beans: '🫘', lentils: '🫘', dal: '🫘', chickpeas: '🫘',
+  soup: '🍲', sauce: '🥫', ketchup: '🥫', mustard: '🥫',
+  salt: '🧂', sugar: '🍬', spice: '🌶️', spices: '🌶️', masala: '🌶️',
+
+  // Beverages
+  water: '💧', 'bottled water': '💧',
+  juice: '🧃', 'orange juice': '🧃',
+  coffee: '☕',
+  tea: '🍵', chai: '🍵',
+  soda: '🥤', coke: '🥤', pepsi: '🥤', sprite: '🥤',
+  beer: '🍺', wine: '🍷', lemonade: '🍋',
+
+  // Snacks & Frozen
+  chips: '🥔', popcorn: '🍿',
+  nuts: '🥜', almonds: '🥜', cashews: '🥜',
+  chocolate: '🍫', candy: '🍬',
+  'ice cream': '🍦', ice: '🧊', pizza: '🍕', 'frozen pizza': '🍕',
+};
+
+export function getItemEmoji(itemName: string, category?: string): string {
+  if (!itemName) return CATEGORY_ICONS[category || 'other'] || '🛒';
+  const lower = itemName.toLowerCase().trim();
+  
+  // Exact match
+  if (ITEM_EMOJIS[lower]) return ITEM_EMOJIS[lower];
+  
+  // Search for multi-word or contained keyword
+  for (const [key, emoji] of Object.entries(ITEM_EMOJIS)) {
+    if (lower.includes(key) || (key.length > 3 && key.includes(lower))) {
+      return emoji;
+    }
+  }
+  
+  // Fallback to Department Category Icon
+  const cat = category || categorize(itemName);
+  return CATEGORY_ICONS[cat] || '🛒';
+}
+
 export function categorize(itemName: string): string {
   const lower = itemName.toLowerCase().trim();
   for (const [cat, keywords] of Object.entries(CATEGORIES)) {

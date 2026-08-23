@@ -9,7 +9,7 @@ import { useVoiceRecognition } from './hooks/useVoiceRecognition';
 import { useShoppingList } from './hooks/useShoppingList';
 import ToastContainer from './components/Toast';
 import { toast } from './utils/toast';
-import { CATEGORY_ICONS } from './utils/categories';
+import { CATEGORY_ICONS, getItemEmoji } from './utils/categories';
 import './App.css';
 
 const AISLE_ICONS: Record<string, string> = {
@@ -415,7 +415,7 @@ export default function App() {
                           {catItems.map(item => (
                             <li key={item.id} className={`vc-panel-item ${item.checked ? 'done' : ''}`}>
                               <div className="vc-panel-item-img">
-                                <span style={{ fontSize: '1.4rem' }}>{CATEGORY_ICONS[item.category] || '🛒'}</span>
+                                <span style={{ fontSize: '1.4rem' }}>{getItemEmoji(item.name, item.category)}</span>
                               </div>
                               <div className="vc-panel-item-info">
                                 <p className="vc-panel-item-name">{item.name}</p>
@@ -524,7 +524,7 @@ export default function App() {
                         <div key={item.id} className={`vc-aisle-item ${item.checked ? 'checked' : ''} ${item.checked ? '' : 'vc-aisle-item--active'}`}>
                           {item.checked && <div className="vc-aisle-item-accent" />}
                           <div className="vc-aisle-item-img">
-                            <span style={{ fontSize: '2rem' }}>{CATEGORY_ICONS[item.category] || '🛒'}</span>
+                            <span style={{ fontSize: '2rem' }}>{getItemEmoji(item.name, item.category)}</span>
                           </div>
                           <div className="vc-aisle-item-body">
                             <div className="vc-aisle-item-name-row">
@@ -602,7 +602,7 @@ export default function App() {
                   ) : [...stockSugs, ...pairingSugs].slice(0, 4).map(s => (
                     <div key={s.name} className="vc-stock-card">
                       <div className="vc-stock-card-top">
-                        <div className="vc-stock-thumb"><span style={{ fontSize: '2.2rem' }}>{CATEGORY_ICONS[s.category] || '🛒'}</span></div>
+                        <div className="vc-stock-thumb"><span style={{ fontSize: '2.2rem' }}>{getItemEmoji(s.name, s.category)}</span></div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <span className="vc-stock-badge">
                             <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>history</span> Usually buying
@@ -640,9 +640,9 @@ export default function App() {
                       <p className="vc-sub-card-label">Instead of {baseItem?.name}</p>
                       <h3 className="vc-sub-card-name">{subs[0] || 'No substitutes'}</h3>
                       <div className="vc-sub-card-visual">
-                        <div className="vc-sub-from"><span style={{ fontSize: '2rem', opacity: 0.5 }}>{CATEGORY_ICONS[baseItem?.category || 'other'] || '🛒'}</span></div>
+                        <div className="vc-sub-from"><span style={{ fontSize: '2rem', opacity: 0.5 }}>{getItemEmoji(baseItem?.name || '', baseItem?.category)}</span></div>
                         <span className="material-symbols-outlined" style={{ color: 'var(--outline)' }}>arrow_forward</span>
-                        <div className="vc-sub-to"><span style={{ fontSize: '2.4rem' }}>{subs[0] ? '✨' : '❓'}</span></div>
+                        <div className="vc-sub-to"><span style={{ fontSize: '2.4rem' }}>{subs[0] ? getItemEmoji(subs[0]) : '✨'}</span></div>
                       </div>
                       <div className="vc-sub-card-note"><p>You've been adding more plant-based items lately.</p></div>
                       {subs.length > 0 && (
@@ -676,7 +676,7 @@ export default function App() {
                   ) : seasonalSugs.map(s => (
                     <div key={s.name} className="vc-seasonal-card">
                       <div className="vc-seasonal-img">
-                        <span style={{ fontSize: '3.5rem' }}>{CATEGORY_ICONS[s.category] || '🌿'}</span>
+                        <span style={{ fontSize: '3.5rem' }}>{getItemEmoji(s.name, s.category)}</span>
                         <span className="vc-seasonal-badge">Peak Season</span>
                         <button className="vc-dismiss-btn vc-dismiss-btn--overlay" title="Dismiss" onClick={() => dismissSuggestion(s.name)}>
                           <span className="material-symbols-outlined">close</span>
@@ -761,7 +761,7 @@ export default function App() {
                     {searchFiltered.map(item => (
                       <div key={item.id} className="vc-result-card">
                         <div className="vc-result-card-img">
-                          <span style={{ fontSize: '3.5rem' }}>{CATEGORY_ICONS[item.category] || '🛒'}</span>
+                          <span style={{ fontSize: '3.5rem' }}>{getItemEmoji(item.name, item.category)}</span>
                           <span className="vc-result-badge">
                             <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>eco</span> {item.category}
                           </span>
