@@ -490,6 +490,9 @@ export default function App() {
                   )}
                   {search && <button onClick={() => setSearch('')}><span className="material-symbols-outlined">close</span></button>}
                 </div>
+                <button className="vc-action-chip" onClick={() => setActiveNav('search')}>
+                  <span className="material-symbols-outlined">storefront</span> Catalog
+                </button>
                 <button className="vc-action-chip" onClick={clearList}>
                   <span className="material-symbols-outlined">delete</span> Clear
                 </button>
@@ -513,6 +516,13 @@ export default function App() {
                 <span className="material-symbols-outlined" style={{ fontSize: '3rem', color: 'var(--outline)' }}>shopping_cart</span>
                 <p className="vc-empty-title">{t('emptyList')}</p>
                 <p className="vc-empty-sub">Use the mic or type above to add items</p>
+                <button
+                  className="vc-add-search-result-btn"
+                  style={{ marginTop: 16 }}
+                  onClick={() => setActiveNav('search')}
+                >
+                  <span className="material-symbols-outlined">storefront</span> Browse Supermarket Catalog
+                </button>
               </div>
             ) : (
               Object.entries(grouped).map(([cat, catItems]) => (
@@ -958,7 +968,8 @@ export default function App() {
             </button>
             <button className={`vc-bottom-item ${activeNav === 'list' ? 'active' : ''}`} onClick={() => setActiveNav('list')}>
               <span className="material-symbols-outlined" style={activeNav === 'list' ? { fontVariationSettings: "'FILL' 1" } : {}}>list_alt</span>
-              <span>Lists</span>
+              <span>Cart</span>
+              {items.length > 0 && <span className="vc-bottom-badge">{items.length}</span>}
             </button>
           </div>
           <div className="vc-bottom-fab-wrap">
@@ -970,13 +981,13 @@ export default function App() {
             </button>
           </div>
           <div className="vc-bottom-nav-right">
+            <button className={`vc-bottom-item ${activeNav === 'search' ? 'active' : ''}`} onClick={() => setActiveNav('search')}>
+              <span className="material-symbols-outlined" style={activeNav === 'search' ? { fontVariationSettings: "'FILL' 1" } : {}}>storefront</span>
+              <span>Catalog</span>
+            </button>
             <button className={`vc-bottom-item ${activeNav === 'suggest' ? 'active' : ''}`} onClick={() => setActiveNav('suggest')}>
               <span className="material-symbols-outlined" style={activeNav === 'suggest' ? { fontVariationSettings: "'FILL' 1" } : {}}>lightbulb</span>
               <span>Suggest</span>
-            </button>
-            <button className={`vc-bottom-item ${activeNav === 'settings' ? 'active' : ''}`} onClick={() => setActiveNav('settings')}>
-              <span className="material-symbols-outlined" style={activeNav === 'settings' ? { fontVariationSettings: "'FILL' 1" } : {}}>settings</span>
-              <span>Settings</span>
             </button>
           </div>
         </div>
