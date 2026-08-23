@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import './i18n';
 import type { ParsedCommand } from './types';
 import { parseVoiceWithGemini, getGeminiApiKey, setGeminiApiKey } from './utils/aiParser';
+import { parseCommands } from './utils/nlp';
 import { generateSuggestions, getSubstitutes } from './utils/suggestions';
 import { useVoiceRecognition } from './hooks/useVoiceRecognition';
 import { useShoppingList } from './hooks/useShoppingList';
@@ -202,10 +203,25 @@ export default function App() {
 
   const handleManualAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newItemName.trim()) return;
-    addItem(newItemName.trim(), newItemQty, 'item');
-    toast(`Added "${newItemName.trim()}"`, 'success');
-    setNewItemName(''); setNewItemQty(1);
+    const raw = newItemName.trim();
+    if (!raw) return;
+
+    // Smart extraction of quantity, units, and product name even from manual text input
+    const parsed = parseCommands(raw);
+    const addCmds = parsed.filter(c => (c.action === 'add' || c.action === 'unknown') && c.item);
+    if (addCmds.length > 0) {
+      addCmds.forEach(c => {
+        const qty = c.quantity > 1 ? c.quantity : newItemQty;
+        const unit = c.unit !== 'item' ? c.unit : 'item';
+        addItem(c.item, qty, unit, c.category);
+        toast(`Added "${c.item}" (${qty} ${unit !== 'item' ? unit : ''})`, 'success');
+      });
+    } else {
+      addItem(raw, newItemQty, 'item');
+      toast(`Added "${raw}"`, 'success');
+    }
+    setNewItemName('');
+    setNewItemQty(1);
   };
 
   const stockSugs = suggestions.filter(s => s.reason.includes('times'));
