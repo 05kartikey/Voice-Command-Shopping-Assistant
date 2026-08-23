@@ -110,36 +110,40 @@ You MUST output ONLY valid JSON matching this schema:
 }
 If no shopping action is present (e.g. purely unrelated talk), return { "commands": [] }.`;
 
+async function getRequestBody(req: any): Promise<any> {
+  if (req.body) {
+    if (typeof req.body === 'object' && Object.keys(req.body).length > 0) return req.body;
+    if (typeof req.body === 'string') {
+      try { return JSON.parse(req.body); } catch { return {}; }
+    }
+    if (Buffer.isBuffer(req.body)) {
+      try { return JSON.parse(req.body.toString('utf-8')); } catch { return {}; }
+    }
+  }
+
+  return new Promise((resolve) => {
+    let data = '';
+    req.on('data', (chunk: any) => { data += chunk; });
+    req.on('end', () => {
+      try {
+        resolve(JSON.parse(data || '{}'));
+      } catch {
+        resolve({});
+      }
+    });
+    req.on('error', () => resolve({}));
+  });
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  let body = req.body;
-  if (typeof body === 'string') {
-    try {
-      body = JSON.parse(body);
-    } catch {
-      body = {};
-    }
-  } else if (!body) {
-    try {
-      const chunks: Buffer[] = [];
-      for await (const chunk of req) {
-        chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
-      }
-      if (chunks.length > 0) {
-        const raw = Buffer.concat(chunks).toString('utf-8');
-        body = JSON.parse(raw);
-      }
-    } catch {
-      body = {};
-    }
-  }
-
+  const body = await getRequestBody(req);
   const { transcript, currentItems } = body || {};
   if (!transcript || typeof transcript !== 'string') {
-    return res.status(400).json({ error: 'Missing transcript' });
+    return res.status(400).json({ error: 'Missing transcript', receivedBody: body });
   }
 
   const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || body?.clientApiKey || (req.headers['x-gemini-key'] as string);
