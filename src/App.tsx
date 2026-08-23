@@ -643,7 +643,22 @@ export default function App() {
                 </h2>
                 {items.length === 0 ? (
                   <div className="vc-sub-card">
-                    <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.85rem', textAlign: 'center', padding: '16px 0' }}>Add items to see substitutes</p>
+                    <p className="vc-sub-card-label">Popular Plant Alternative</p>
+                    <h3 className="vc-sub-card-name">Oat Milk (Barista)</h3>
+                    <div className="vc-sub-card-visual">
+                      <div className="vc-sub-from"><span style={{ fontSize: '2rem', opacity: 0.5 }}>🥛</span></div>
+                      <span className="material-symbols-outlined" style={{ color: 'var(--outline)' }}>arrow_forward</span>
+                      <div className="vc-sub-to"><span style={{ fontSize: '2.4rem' }}>🌾</span></div>
+                    </div>
+                    <div className="vc-sub-card-note"><p>Lactose-free & rich barista-grade plant beverage.</p></div>
+                    <div className="vc-sub-chips-row">
+                      {['Almond Milk', 'Soy Milk', 'Coconut Milk'].map(s => (
+                        <button key={s} className="vc-sub-chip-btn" onClick={() => { addItem(s, 1, 'carton', 'dairy'); toast(`Added "${s}"`, 'success'); setActiveNav('list'); }}>{s}</button>
+                      ))}
+                    </div>
+                    <button className="vc-sub-card-btn" onClick={() => { addItem('Oat Milk', 1, 'carton', 'dairy'); toast('Added "Oat Milk"', 'success'); setActiveNav('list'); }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add_shopping_cart</span> Add Oat Milk
+                    </button>
                   </div>
                 ) : (() => {
                   const milkItem = items.find(i => i.name.toLowerCase().includes('milk'));
@@ -967,9 +982,11 @@ export default function App() {
               <span>Home</span>
             </button>
             <button className={`vc-bottom-item ${activeNav === 'list' ? 'active' : ''}`} onClick={() => setActiveNav('list')}>
-              <span className="material-symbols-outlined" style={activeNav === 'list' ? { fontVariationSettings: "'FILL' 1" } : {}}>list_alt</span>
+              <span className="vc-bottom-icon-wrap">
+                <span className="material-symbols-outlined" style={activeNav === 'list' ? { fontVariationSettings: "'FILL' 1" } : {}}>list_alt</span>
+                {items.length > 0 && <span className="vc-bottom-badge">{items.length}</span>}
+              </span>
               <span>Cart</span>
-              {items.length > 0 && <span className="vc-bottom-badge">{items.length}</span>}
             </button>
           </div>
           <div className="vc-bottom-fab-wrap">
