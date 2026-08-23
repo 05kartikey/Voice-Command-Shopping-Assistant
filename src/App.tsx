@@ -641,51 +641,50 @@ export default function App() {
                 <h2 className="vc-section-heading">
                   <span className="material-symbols-outlined" style={{ color: 'var(--primary)' }}>swap_horiz</span> Smart Substitutes
                 </h2>
-                {items.length === 0 ? (
-                  <div className="vc-sub-card">
-                    <p className="vc-sub-card-label">Popular Plant Alternative</p>
-                    <h3 className="vc-sub-card-name">Oat Milk (Barista)</h3>
-                    <div className="vc-sub-card-visual">
-                      <div className="vc-sub-from"><span style={{ fontSize: '2rem', opacity: 0.5 }}>🥛</span></div>
-                      <span className="material-symbols-outlined" style={{ color: 'var(--outline)' }}>arrow_forward</span>
-                      <div className="vc-sub-to"><span style={{ fontSize: '2.4rem' }}>🌾</span></div>
-                    </div>
-                    <div className="vc-sub-card-note"><p>Lactose-free & rich barista-grade plant beverage.</p></div>
-                    <div className="vc-sub-chips-row">
-                      {['Almond Milk', 'Soy Milk', 'Coconut Milk'].map(s => (
-                        <button key={s} className="vc-sub-chip-btn" onClick={() => { addItem(s, 1, 'carton', 'dairy'); toast(`Added "${s}"`, 'success'); setActiveNav('list'); }}>{s}</button>
-                      ))}
-                    </div>
-                    <button className="vc-sub-card-btn" onClick={() => { addItem('Oat Milk', 1, 'carton', 'dairy'); toast('Added "Oat Milk"', 'success'); setActiveNav('list'); }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add_shopping_cart</span> Add Oat Milk
-                    </button>
-                  </div>
-                ) : (() => {
-                  const milkItem = items.find(i => i.name.toLowerCase().includes('milk'));
-                  const subs = milkItem ? getSubstitutes(milkItem.name) : getSubstitutes(items[0]?.name || '');
-                  const baseItem = milkItem || items[0];
-                  return (
-                    <div className="vc-sub-card">
-                      <p className="vc-sub-card-label">Instead of {baseItem?.name}</p>
-                      <h3 className="vc-sub-card-name">{subs[0] || 'No substitutes'}</h3>
-                      <div className="vc-sub-card-visual">
-                        <div className="vc-sub-from"><span style={{ fontSize: '2rem', opacity: 0.5 }}>{getItemEmoji(baseItem?.name || '', baseItem?.category)}</span></div>
-                        <span className="material-symbols-outlined" style={{ color: 'var(--outline)' }}>arrow_forward</span>
-                        <div className="vc-sub-to"><span style={{ fontSize: '2.4rem' }}>{subs[0] ? getItemEmoji(subs[0]) : '✨'}</span></div>
-                      </div>
-                      <div className="vc-sub-card-note"><p>You've been adding more plant-based items lately.</p></div>
-                      {subs.length > 0 && (
+                {(() => {
+                  const itemWithSub = items.find(i => getSubstitutes(i.name).length > 0);
+                  if (itemWithSub) {
+                    const subs = getSubstitutes(itemWithSub.name);
+                    return (
+                      <div className="vc-sub-card">
+                        <p className="vc-sub-card-label">Instead of {itemWithSub.name}</p>
+                        <h3 className="vc-sub-card-name">{subs[0]}</h3>
+                        <div className="vc-sub-card-visual">
+                          <div className="vc-sub-from"><span>{getItemEmoji(itemWithSub.name, itemWithSub.category)}</span></div>
+                          <span className="material-symbols-outlined" style={{ color: 'var(--outline)' }}>arrow_forward</span>
+                          <div className="vc-sub-to"><span>{getItemEmoji(subs[0])}</span></div>
+                        </div>
+                        <div className="vc-sub-card-note"><p>Great plant-based or dietary alternative for your recipe.</p></div>
                         <div className="vc-sub-chips-row">
-                          {subs.slice(0,3).map(s => (
+                          {subs.slice(0, 3).map(s => (
                             <button key={s} className="vc-sub-chip-btn" onClick={() => { addItem(s); toast(`Added "${s}"`, 'success'); setActiveNav('list'); }}>{s}</button>
                           ))}
                         </div>
-                      )}
-                      {subs[0] && (
                         <button className="vc-sub-card-btn" onClick={() => { addItem(subs[0]); toast(`Added "${subs[0]}"`, 'success'); setActiveNav('list'); }}>
-                          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add_shopping_cart</span> Try Substitute
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add_shopping_cart</span> Add {subs[0]}
                         </button>
-                      )}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="vc-sub-card">
+                      <p className="vc-sub-card-label">Popular Plant Alternative</p>
+                      <h3 className="vc-sub-card-name">Oat Milk (Barista)</h3>
+                      <div className="vc-sub-card-visual">
+                        <div className="vc-sub-from"><span style={{ fontSize: '2rem', opacity: 0.5 }}>🥛</span></div>
+                        <span className="material-symbols-outlined" style={{ color: 'var(--outline)' }}>arrow_forward</span>
+                        <div className="vc-sub-to"><span style={{ fontSize: '2.4rem' }}>🌾</span></div>
+                      </div>
+                      <div className="vc-sub-card-note"><p>Lactose-free & rich barista-grade plant beverage.</p></div>
+                      <div className="vc-sub-chips-row">
+                        {['Almond Milk', 'Soy Milk', 'Coconut Milk'].map(s => (
+                          <button key={s} className="vc-sub-chip-btn" onClick={() => { addItem(s, 1, 'carton', 'dairy'); toast(`Added "${s}"`, 'success'); setActiveNav('list'); }}>{s}</button>
+                        ))}
+                      </div>
+                      <button className="vc-sub-card-btn" onClick={() => { addItem('Oat Milk', 1, 'carton', 'dairy'); toast('Added "Oat Milk"', 'success'); setActiveNav('list'); }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>add_shopping_cart</span> Add Oat Milk
+                      </button>
                     </div>
                   );
                 })()}
